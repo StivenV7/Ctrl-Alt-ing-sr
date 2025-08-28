@@ -11,7 +11,8 @@ import {
   addDoc,
   serverTimestamp,
   doc,
-  getDoc
+  getDoc,
+  orderBy
 } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -23,8 +24,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ForumMessage, ForumCategory } from '@/lib/types';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
-export default function ForumCategoryPage({ params }: { params: { id: string } }) {
+export default function ForumCategoryPage() {
+  const params = useParams();
   const { user, userDoc, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ForumMessage[]>([]);
   const [category, setCategory] = useState<ForumCategory | null>(null);
@@ -34,7 +37,7 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
   const [isMember, setIsMember] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const categoryId = params.id;
+  const categoryId = params.id as string;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,7 +48,7 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
   }, [messages]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !categoryId) return;
 
     // First, determine if the user is a member
     if (userDoc) {
@@ -91,6 +94,7 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     const q = query(
       collection(db, 'forum_messages'),
       where('categoryId', '==', categoryId),
+      orderBy('timestamp', 'asc')
     );
 
     const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
@@ -98,8 +102,6 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
-      // Sort messages by timestamp client-side
-      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
       setMessages(msgs);
       setLoading(false);
     }, (error) => {
