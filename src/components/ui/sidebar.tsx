@@ -271,7 +271,7 @@ const SidebarHeader = React.forwardRef<
         )}
       {...props}
     >
-        <div className={cn(state === 'collapsed' ? 'hidden' : 'flex')}>
+        <div className={cn(state === 'collapsed' ? 'hidden' : 'flex', 'w-full items-center')}>
          {props.children}
         </div>
         <div className={cn(state === 'expanded' ? 'hidden' : 'flex')}>
