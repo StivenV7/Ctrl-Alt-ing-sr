@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -100,31 +101,36 @@ export default function Home() {
 
   const handleHabitUpdate = (habitId: string, updatedEntries: HabitEntry[]) => {
     let newXp = userXp;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-
+    
     const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
             const oldCompletedCount = (h.entries || []).filter(e => e.completed).length;
             const newCompletedCount = updatedEntries.filter(e => e.completed).length;
             
-            newXp += (newCompletedCount - oldCompletedCount);
+            // Grant XP for new completions, but don't remove for un-checking
+            if (newCompletedCount > oldCompletedCount) {
+              newXp += (newCompletedCount - oldCompletedCount);
+            }
 
             return { ...h, entries: updatedEntries };
         }
         return h;
     });
 
-    const updatedStreak = calculateStreak(updatedEntries);
+    const targetHabitEntries = updatedHabits.find(h => h.id === habitId)?.entries || [];
+    const updatedStreak = calculateStreak(targetHabitEntries);
     
-    if (updatedStreak.count > 1 && updatedStreak.justIncreased) {
+    if (updatedStreak.justIncreased) {
        toast({
-        title: `🔥 Racha de ${updatedStreak.count} días!`,
-        description: "Sigue así!",
+        title: `🔥 ¡Racha de ${updatedStreak.count} días!`,
+        description: "¡Sigue así!",
       });
     }
 
     setHabits(updatedHabits);
-    setUserXp(newXp);
+    if(newXp !== userXp) {
+      setUserXp(newXp);
+    }
 
     const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
     saveData({ habits: habitsToSave, xp: newXp });
@@ -259,3 +265,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
