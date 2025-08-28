@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { BookOpen, Dumbbell, HeartPulse } from 'lucide-react';
+import { BookOpen, Dumbbell, HeartPulse, Trash2 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Flame, PlusCircle, Sparkles, TrendingUp, LogOut } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
+import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
 import { RankDisplay } from '@/components/RankDisplay';
 import { InsightsPanel } from '@/components/InsightsPanel';
 import { Logo } from '@/components/icons';
@@ -165,6 +166,16 @@ export default function Home() {
     })
   };
 
+  const handleDeleteHabit = (habitId: string) => {
+    const updatedHabits = habits.filter(habit => habit.id !== habitId);
+    setHabits(updatedHabits);
+    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest) });
+    toast({
+      title: "Hábito eliminado",
+      description: "El hábito ha sido eliminado de tu lista.",
+    });
+  };
+
   const handleGoalsChange = (goals: string) => {
     setUserGoals(goals);
     saveData({ goals });
@@ -248,6 +259,11 @@ export default function Home() {
                         <Badge variant={habit.completed ? 'default' : 'secondary'} className={`transition-colors ${habit.completed ? 'bg-primary text-primary-foreground' : ''}`}>
                           {habit.completed ? 'Completado' : 'Pendiente'}
                         </Badge>
+                        <DeleteHabitDialog habitName={habit.name} onDelete={() => handleDeleteHabit(habit.id)}>
+                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DeleteHabitDialog>
                       </CardContent>
                     </Card>
                   )) : (
