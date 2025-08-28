@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -86,7 +87,7 @@ export function LoginForm({ setError }: LoginFormProps) {
           theme: theme,
           xp: 0,
           habits: [], // Start with an empty list of habits
-          chatHistory: [],
+          followedCategoryIds: [],
         });
       }
     } catch (error: any) {

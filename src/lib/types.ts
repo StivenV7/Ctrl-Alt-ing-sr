@@ -1,5 +1,8 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
+import { Timestamp } from 'firebase/firestore';
+
 
 // A daily entry for a habit challenge
 export const HabitEntrySchema = z.object({
@@ -62,3 +65,23 @@ export const ChatOutputSchema = z.object({
   suggestions: z.array(HabitSuggestionSchema).optional().describe('A list of actionable habit challenges suggested by the AI.'),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
+
+// FORUM TYPES
+
+export interface ForumCategory {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdAt: Timestamp;
+}
+
+export interface ForumMessage {
+  id: string;
+  content: string;
+  timestamp: Timestamp;
+  userId: string;
+  userName: string;
+  userImage: string | null;
+  categoryId: string;
+}

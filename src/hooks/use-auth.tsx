@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -7,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   setTheme: (theme: 'light' | 'blue' | 'pink') => void;
+  userDoc: DocumentSnapshot<DocumentData> | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,32 +24,36 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   setTheme: () => {},
+  userDoc: null,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userDoc, setUserDoc] = useState<DocumentSnapshot<DocumentData> | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAndCreateUserDocument = async (user: User) => {
-    const userRef = doc(db, 'users', user.uid);
+  const checkAndCreateUserDocument = async (currentUser: User) => {
+    const userRef = doc(db, 'users', currentUser.uid);
     const docSnap = await getDoc(userRef);
 
     let userTheme: 'light' | 'blue' | 'pink' = 'light';
+    
     if (docSnap.exists()) {
       userTheme = docSnap.data().theme || 'light';
+      setUserDoc(docSnap);
     } else {
        console.log("Creating new user document in use-auth");
-      // Document doesn't exist, so this is a new or returning user without a doc.
-      // Let's create one.
-      await setDoc(userRef, {
-        uid: user.uid,
-        displayName: user.displayName || 'Usuario',
-        email: user.email,
+       await setDoc(userRef, {
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || 'Usuario',
+        email: currentUser.email,
         theme: 'light', // Default theme
         xp: 0,
         habits: [],
-        chatHistory: [],
-      });
+        followedCategoryIds: [],
+       });
+       const newDocSnap = await getDoc(userRef);
+       setUserDoc(newDocSnap);
     }
     setTheme(userTheme);
   };
@@ -61,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(user);
       } else {
         setUser(null);
-        // On signout, reset to default theme
+        setUserDoc(null);
         setTheme('light');
       }
       setLoading(false);
@@ -79,11 +85,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await firebaseSignOut(auth);
-    // State change will be handled by onAuthStateChanged listener
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, setTheme }}>
+    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme }}>
       {children}
     </AuthContext.Provider>
   );

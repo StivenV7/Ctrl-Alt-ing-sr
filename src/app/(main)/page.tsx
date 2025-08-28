@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -22,6 +21,7 @@ import { AIChatPanel } from '@/components/AIChatPanel';
 import { Logo } from '@/components/icons';
 import { HabitDetails } from '@/components/HabitDetails';
 import { calculateStreak } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 
 // Map stored habit IDs to Lucide icons
@@ -202,7 +202,7 @@ export default function Home() {
 
 
   if (authLoading || !user || !isDataLoaded) {
-    return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -247,3 +247,4 @@ export default function Home() {
     </div>
   );
 }
+

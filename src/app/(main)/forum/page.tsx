@@ -1,164 +1,168 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import {
   collection,
-  query,
-  orderBy,
   onSnapshot,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
   addDoc,
-  serverTimestamp,
-  Timestamp,
+  serverTimestamp
 } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader2, MessagesSquare } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Loader2, PlusCircle, Users } from 'lucide-react';
+import { ForumCategory } from '@/lib/types';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { AddCategoryDialog } from '@/components/forum/AddCategoryDialog';
 
-interface ForumMessage {
-  id: string;
-  content: string;
-  timestamp: Timestamp;
-  userId: string;
-  userName: string;
-  userImage: string | null;
-}
 
-export default function ForumPage() {
+export default function ForumHomePage() {
   const { user, loading: authLoading } = useAuth();
-  const [messages, setMessages] = useState<ForumMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [categories, setCategories] = useState<ForumCategory[]>([]);
+  const [followedCategoryIds, setFollowedCategoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const { toast } = useToast();
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (authLoading) return;
     if (!user) {
-      setLoading(false);
+      if (!authLoading) setLoading(false);
       return;
     }
 
-
     setLoading(true);
-    const q = query(collection(db, 'forum_messages'), orderBy('timestamp', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const msgs: ForumMessage[] = [];
-      querySnapshot.forEach((doc) => {
-        msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
+    // Listen for categories
+    const categoriesUnsub = onSnapshot(collection(db, 'forum_categories'), (snapshot) => {
+      const cats: ForumCategory[] = [];
+      snapshot.forEach((doc) => {
+        cats.push({ id: doc.id, ...doc.data() } as ForumCategory);
       });
-      setMessages(msgs);
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching forum messages:", error);
+      setCategories(cats);
+    });
+
+    // Listen for user's followed categories
+    const userDocRef = doc(db, 'users', user.uid);
+    const userUnsub = onSnapshot(userDocRef, (doc) => {
+        setFollowedCategoryIds(doc.data()?.followedCategoryIds || []);
         setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      categoriesUnsub();
+      userUnsub();
+    };
   }, [user, authLoading]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user || sending) return;
+  const handleToggleFollow = async (categoryId: string) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    const isFollowing = followedCategoryIds.includes(categoryId);
 
-    setSending(true);
     try {
-      await addDoc(collection(db, 'forum_messages'), {
-        content: newMessage,
-        timestamp: serverTimestamp(),
-        userId: user.uid,
-        userName: user.displayName,
-        userImage: user.photoURL,
+      await updateDoc(userDocRef, {
+        followedCategoryIds: isFollowing ? arrayRemove(categoryId) : arrayUnion(categoryId),
       });
-      setNewMessage('');
+      toast({
+        title: isFollowing ? 'Dejaste la comunidad' : '¡Te uniste a la comunidad!',
+        description: `Ahora ${isFollowing ? 'no recibirás' : 'recibirás'} mensajes de esta comunidad.`,
+      });
     } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setSending(false);
+      console.error("Error updating followed categories:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar tu suscripción.' });
     }
   };
-  
+
+  const handleCreateCategory = async (name: string, description: string) => {
+     if (!user) return;
+     try {
+        const newCategoryRef = await addDoc(collection(db, 'forum_categories'), {
+            name,
+            description,
+            createdBy: user.uid,
+            createdAt: serverTimestamp(),
+        });
+        await handleToggleFollow(newCategoryRef.id); // Automatically follow created category
+        toast({ title: 'Comunidad Creada', description: `¡La comunidad "${name}" ha sido creada y ya la sigues!` });
+
+     } catch(error) {
+        console.error("Error creating category:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear la comunidad.' });
+     }
+  }
+
   if (authLoading || loading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-  
+
   if (!user) {
     return (
-        <div className="flex h-full items-center justify-center">
-            <Card className="p-8 text-center">
-                <CardTitle>Acceso denegado</CardTitle>
-                <CardContent className="mt-4">
-                    <p>Debes iniciar sesión para ver el foro.</p>
-                </CardContent>
-            </Card>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <Card className="p-8 text-center">
+          <CardTitle>Acceso denegado</CardTitle>
+          <CardContent className="mt-4">
+            <p>Debes iniciar sesión para unirte a las comunidades.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="shadow-lg h-full flex flex-col max-h-[calc(100vh-10rem)]">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-            <MessagesSquare className="h-6 w-6 text-primary" />
-            <CardTitle className="font-headline">Foro de la Comunidad</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 ${msg.userId === user?.uid ? 'flex-row-reverse' : ''}`}
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={msg.userImage || undefined} />
-              <AvatarFallback>{msg.userName?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className={`flex flex-col ${msg.userId === user?.uid ? 'items-end' : 'items-start'}`}>
-                <div
-                    className={`rounded-lg px-3 py-2 max-w-sm ${
-                    msg.userId === user?.uid
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                    {msg.userName} - {msg.timestamp ? formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true, locale: es }) : 'justo ahora'}
-                </p>
+    <Card className="shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+            <div className="flex items-center gap-2">
+                <Users className="h-6 w-6 text-primary" />
+                <CardTitle className="font-headline">Explorar Comunidades</CardTitle>
             </div>
-
-          </div>
-        ))}
-         <div ref={messagesEndRef} />
+            <CardDescription>Únete a las conversaciones que te interesan.</CardDescription>
+        </div>
+        <AddCategoryDialog onCreate={handleCreateCategory}>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Crear Comunidad
+            </Button>
+        </AddCategoryDialog>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {categories.length > 0 ? (
+            categories.map((cat) => {
+              const isFollowing = followedCategoryIds.includes(cat.id);
+              return (
+                <Card key={cat.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                  <div className="flex-grow">
+                    <Link href={`/forum/${cat.id}`} className="block">
+                      <h3 className="font-semibold text-lg hover:underline">{cat.name}</h3>
+                      <p className="text-sm text-muted-foreground">{cat.description}</p>
+                    </Link>
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <Button
+                      variant={isFollowing ? 'outline' : 'default'}
+                      onClick={() => handleToggleFollow(cat.id)}
+                    >
+                      {isFollowing ? 'Dejar de Seguir' : 'Unirme'}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No hay comunidades todavía.</p>
+              <p>¡Crea la primera!</p>
+            </div>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="p-4 border-t">
-        <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
-          <Input
-            placeholder="Escribe un mensaje..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            disabled={sending}
-          />
-          <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </form>
-      </CardFooter>
     </Card>
   );
 }
+

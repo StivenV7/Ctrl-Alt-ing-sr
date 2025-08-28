@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,7 +45,7 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
           theme: 'light', // Default theme for Google sign-ups
           xp: 0,
           habits: [],
-          chatHistory: [],
+          followedCategoryIds: [],
         });
       }
       

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +12,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useState, useEffect, useCallback } from 'react';
 import { BottomNavbar } from '@/components/BottomNavbar';
+import { ForumSidebar } from '@/components/forum/ForumSidebar';
+import { usePathname } from 'next/navigation';
+
 
 export default function MainLayout({
   children,
@@ -20,8 +24,11 @@ export default function MainLayout({
   const { user, signOut } = useAuth();
   const [userXp, setUserXp] = useState(0);
   const [userName, setUserName] = useState('');
+  const pathname = usePathname();
 
   const userRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
+
+  const isForumPage = pathname.startsWith('/forum');
 
   const loadUserData = useCallback(async () => {
     if (!userRef) return;
@@ -65,10 +72,20 @@ export default function MainLayout({
         </div>
       </header>
 
-      <main className="flex-1 p-4 md:p-8 mb-16 md:mb-0">
-        {children}
-      </main>
-
+      <div className="flex-1 container mx-auto p-4 md:p-8">
+        <div className={isForumPage ? "grid md:grid-cols-12 gap-8" : ""}>
+          {isForumPage && (
+            <div className="hidden md:block md:col-span-3">
+              <ForumSidebar />
+            </div>
+          )}
+          <main className={isForumPage ? "md:col-span-9" : "w-full"}>
+              {children}
+          </main>
+        </div>
+      </div>
+      
+      <div className="h-16 md:hidden" />
       <BottomNavbar rank={currentRank} xp={userXp} displayName={userName} onSignOut={signOut} />
     </div>
   );
