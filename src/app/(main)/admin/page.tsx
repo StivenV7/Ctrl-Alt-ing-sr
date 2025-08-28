@@ -38,16 +38,26 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || !isAdmin) {
+    if (!user) {
       router.push('/');
       return;
     }
+    
+    // Quick redirect if not admin, but main check will be server-side with rules
+    if (!isAdmin) {
+        setLoading(false); // Stop loading, the render will handle the redirect/denial message
+        return;
+    }
+
 
     // Fetch users
     const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
       const userList: FirestoreUser[] = [];
       snapshot.forEach((doc) => userList.push(doc.data() as FirestoreUser));
       setUsers(userList);
+    }, (error) => {
+        console.error("Error fetching users:", error);
+        toast({title: 'Error de Permisos', description: 'No se pudieron cargar los usuarios. Asegúrate de tener rol de administrador.', variant: 'destructive'});
     });
 
     // Fetch categories
@@ -63,6 +73,9 @@ export default function AdminPage() {
       const suggestionList: CategorySuggestion[] = [];
       snapshot.forEach((doc) => suggestionList.push({ id: doc.id, ...doc.data() } as CategorySuggestion));
       setSuggestions(suggestionList);
+    }, (error) => {
+        console.error("Error fetching suggestions:", error);
+        toast({title: 'Error de Permisos', description: 'No se pudieron cargar las sugerencias.', variant: 'destructive'});
     });
 
     setLoading(false);
@@ -72,7 +85,7 @@ export default function AdminPage() {
       categoriesUnsub();
       suggestionsUnsub();
     };
-  }, [user, isAdmin, authLoading, router]);
+  }, [user, isAdmin, authLoading, router, toast]);
   
   const handleSuggestion = async (suggestion: CategorySuggestion, newStatus: 'approved' | 'rejected') => {
     const suggestionRef = doc(db, 'category_suggestions', suggestion.id);
