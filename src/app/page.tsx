@@ -1,3 +1,200 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { format, subDays } from 'date-fns';
+import { useToast } from "@/hooks/use-toast"
+import type { Habit, Rank } from '@/lib/types';
+import { INITIAL_HABITS, RANKS } from '@/lib/constants';
+import { getHabitInsights, type HabitInsightsOutput } from '@/ai/flows/habit-insights';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Flame, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { AddHabitDialog } from '@/components/AddHabitDialog';
+import { RankDisplay } from '@/components/RankDisplay';
+import { InsightsPanel } from '@/components/InsightsPanel';
+import { Logo } from '@/components/icons';
+
+
 export default function Home() {
-  return <></>;
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [userXp, setUserXp] = useState(0);
+  const [userGoals, setUserGoals] = useState('');
+  const [insights, setInsights] = useState<HabitInsightsOutput['insights']>([]);
+  const [loadingInsights, setLoadingInsights] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // On initial load, set habits and calculate initial XP
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    let initialXp = 0;
+    const loadedHabits = INITIAL_HABITS.map(habit => {
+      const completed = habit.lastCompletedDate === todayStr;
+      if (completed) {
+        initialXp += habit.streak; // Simplified initial XP calculation
+      }
+      return { ...habit, completed };
+    });
+    setHabits(loadedHabits);
+    setUserXp(initialXp);
+  }, []);
+  
+  const currentRank = useMemo(() => {
+    return [...RANKS].reverse().find(rank => userXp >= rank.minXp) ?? RANKS[0];
+  }, [userXp]);
+
+  const handleCompleteHabit = (habitId: string) => {
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
+
+    let newStreakValue = 0;
+    const updatedHabits = habits.map(habit => {
+      if (habit.id === habitId) {
+        if (habit.completed) {
+          // Un-complete
+          const newStreak = habit.streak > 0 ? habit.streak - 1 : 0;
+          newStreakValue = -1;
+          setUserXp(prev => Math.max(0, prev - 1));
+          return { ...habit, completed: false, streak: newStreak, lastCompletedDate: habit.streak > 1 ? yesterdayStr : null };
+        } else {
+          // Complete
+          let newStreak = 1;
+          if (habit.lastCompletedDate === yesterdayStr) {
+            newStreak = habit.streak + 1;
+          }
+          newStreakValue = newStreak;
+          setUserXp(prev => prev + 1);
+          return { ...habit, completed: true, streak: newStreak, lastCompletedDate: todayStr };
+        }
+      }
+      return habit;
+    });
+
+    if (newStreakValue > 1) {
+      toast({
+        title: `🔥 Racha de ${newStreakValue} días!`,
+        description: "Sigue así!",
+      })
+    }
+    
+    setHabits(updatedHabits);
+  };
+
+  const handleAddHabit = (name: string, category: string) => {
+    const newHabit: Habit = {
+      id: `habit-${Date.now()}`,
+      name,
+      category,
+      icon: TrendingUp,
+      completed: false,
+      streak: 0,
+      lastCompletedDate: null,
+    };
+    setHabits(prev => [...prev, newHabit]);
+    toast({
+      title: "Hábito añadido",
+      description: `Has añadido "${name}" a tu lista.`,
+    })
+  };
+  
+  const handleGetInsights = async () => {
+    setLoadingInsights(true);
+    setInsights([]);
+    try {
+      const result = await getHabitInsights({
+        habits: habits,
+        userGoals: userGoals || "Mejorar mi constancia y bienestar general.",
+      });
+      setInsights(result.insights);
+    } catch (error) {
+      console.error("Error getting AI insights:", error);
+      toast({
+        variant: "destructive",
+        title: "Error de IA",
+        description: "No se pudieron obtener las sugerencias. Inténtalo de nuevo.",
+      });
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
+          <div className="flex gap-2 items-center">
+            <Logo className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-bold font-headline text-primary">Habitica</h1>
+          </div>
+          <div className="flex flex-1 items-center justify-end space-x-4">
+            <RankDisplay rank={currentRank} xp={userXp} />
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 md:p-8">
+        <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <Card className="shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-headline">Mis Hábitos</CardTitle>
+                <AddHabitDialog onAddHabit={handleAddHabit}>
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Añadir Hábito
+                  </Button>
+                </AddHabitDialog>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {habits.length > 0 ? habits.map(habit => (
+                    <Card key={habit.id} className={`transition-all duration-300 ${habit.completed ? 'bg-green-100 dark:bg-green-900/30 border-primary/50' : ''}`}>
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <Checkbox 
+                          id={`habit-${habit.id}`}
+                          checked={habit.completed}
+                          onCheckedChange={() => handleCompleteHabit(habit.id)}
+                          className="h-6 w-6"
+                          aria-label={`Marcar ${habit.name} como completado`}
+                        />
+                         <div className="flex-grow grid gap-1">
+                          <label htmlFor={`habit-${habit.id}`} className="font-semibold cursor-pointer">{habit.name}</label>
+                          <p className="text-sm text-muted-foreground">{habit.category}</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-amber-500 font-bold">
+                          <Flame className="h-5 w-5"/>
+                          <span>{habit.streak}</span>
+                        </div>
+                        <Badge variant={habit.completed ? 'default' : 'secondary'} className={`transition-colors ${habit.completed ? 'bg-primary text-primary-foreground' : ''}`}>
+                          {habit.completed ? 'Completado' : 'Pendiente'}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  )) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>No tienes hábitos todavía.</p>
+                      <p>¡Añade uno para empezar!</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-1">
+            <InsightsPanel 
+              userGoals={userGoals}
+              setUserGoals={setUserGoals}
+              insights={insights}
+              loading={loadingInsights}
+              onGetInsights={handleGetInsights}
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
