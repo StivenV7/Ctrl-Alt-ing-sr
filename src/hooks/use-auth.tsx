@@ -45,8 +45,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: user.email,
         theme: 'light', // Default theme
         xp: 0,
-        goals: 'Mejorar mi constancia y bienestar general.',
         habits: [],
+        chatHistory: [],
       });
     }
     setTheme(userTheme);

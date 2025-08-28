@@ -43,8 +43,8 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
           email: user.email,
           theme: 'light', // Default theme for Google sign-ups
           xp: 0,
-          goals: 'Mejorar mi constancia y bienestar general.',
           habits: [],
+          chatHistory: [],
         });
       }
       

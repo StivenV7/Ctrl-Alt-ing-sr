@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
-import type { Habit, FirestoreHabit } from '@/lib/types';
+import type { Habit, FirestoreHabit, ChatMessage, ChatOutput } from '@/lib/types';
 import { RANKS } from '@/lib/constants';
-import { generateHabitPlan, type GenerateHabitPlanOutput } from '@/ai/flows/habit-insights';
+import { chat } from '@/ai/flows/chat-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -20,7 +20,7 @@ import { Flame, PlusCircle, Sparkles, TrendingUp, LogOut } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
 import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
 import { RankDisplay } from '@/components/RankDisplay';
-import { AIGenerateHabitPlanPanel } from '@/components/AIGenerateHabitPlanPanel';
+import { AIChatPanel } from '@/components/AIChatPanel';
 import { Logo } from '@/components/icons';
 
 
@@ -38,10 +38,8 @@ const getIconForHabit = (habitId: string) => {
 
 export default function Home() {
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [userXp, setUserXp] = useState(0);
-  const [userGoals, setUserGoals] = useState('');
-  const [suggestedHabits, setSuggestedHabits] = useState<GenerateHabitPlanOutput['habits']>([]);
-  const [loadingInsights, setLoadingInsights] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
   const { user, loading: authLoading, signOut } = useAuth();
@@ -61,7 +59,7 @@ export default function Home() {
         })) || [];
         setHabits(loadedHabits);
         setUserXp(userData.xp || 0);
-        setUserGoals(userData.goals || '');
+        setChatHistory(userData.chatHistory || []);
       } else {
         // This can happen for a brief moment for new users.
         // The auth hook will create it, and the listener will re-run this.
@@ -175,31 +173,35 @@ export default function Home() {
       description: "El hábito ha sido eliminado de tu lista.",
     });
   };
-
-  const handleGoalsChange = (goals: string) => {
-    setUserGoals(goals);
-    saveData({ goals });
-  };
   
-  const handleGenerateHabitPlan = async () => {
-    setLoadingInsights(true);
-    setSuggestedHabits([]);
+  const handleChatSubmit = async (message: string): Promise<ChatOutput> => {
+    const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', content: message }];
+    setChatHistory(newHistory);
+    
     try {
-      const result = await generateHabitPlan({
-        userGoals: userGoals || "Mejorar mi constancia y bienestar general.",
+      const result = await chat({
+        history: newHistory,
       });
-      setSuggestedHabits(result.habits);
+
+      const assistantMessage: ChatMessage = { role: 'assistant', content: result.answer, suggestions: result.suggestions };
+      const finalHistory = [...newHistory, assistantMessage];
+      setChatHistory(finalHistory);
+      saveData({ chatHistory: finalHistory });
+      
+      return result;
     } catch (error) {
-      console.error("Error getting AI insights:", error);
+      console.error("Error getting AI response:", error);
+      const errMessage: ChatMessage = { role: 'assistant', content: "Lo siento, tuve un problema para responder. Inténtalo de nuevo." };
+      setChatHistory([...newHistory, errMessage]);
       toast({
         variant: "destructive",
         title: "Error de IA",
-        description: "No se pudo generar el plan. Inténtalo de nuevo.",
+        description: "No se pudo obtener respuesta. Inténtalo de nuevo.",
       });
-    } finally {
-      setLoadingInsights(false);
+      throw error; // Re-throw to be caught by the caller if needed
     }
   };
+
 
   if (authLoading || !user || !isDataLoaded) {
     return <div className="flex h-screen items-center justify-center">Cargando...</div>;
@@ -276,12 +278,9 @@ export default function Home() {
             </Card>
           </div>
           <div className="lg:col-span-1">
-            <AIGenerateHabitPlanPanel 
-              userGoals={userGoals}
-              setUserGoals={handleGoalsChange}
-              suggestedHabits={suggestedHabits}
-              loading={loadingInsights}
-              onGeneratePlan={handleGenerateHabitPlan}
+            <AIChatPanel 
+              chatHistory={chatHistory}
+              onSubmit={handleChatSubmit}
               onAddHabit={handleAddHabit}
             />
           </div>

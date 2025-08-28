@@ -84,8 +84,8 @@ export function LoginForm({ setError }: LoginFormProps) {
           gender: values.gender,
           theme: theme,
           xp: 0,
-          goals: 'Mejorar mi constancia y bienestar general.',
           habits: [], // Start with an empty list of habits
+          chatHistory: [],
         });
       }
     } catch (error: any) {
