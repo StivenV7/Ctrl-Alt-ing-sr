@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, collection, query, getCountFromServer, writeBatch, serverTimestamp } from "firebase/firestore"; 
+import { doc, setDoc, getDoc, collection, query, getCountFromServer, writeBatch, serverTimestamp, getDocs } from "firebase/firestore"; 
 import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
