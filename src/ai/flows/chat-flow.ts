@@ -31,11 +31,7 @@ Tú: "¡Perfecto! Un mes es una meta realista. El libro tiene unas 300 páginas.
 
 Historial de la conversación:
 {{#each history}}
-  {{#if (this.role == 'user')}}
-    Usuario: {{{this.content}}}
-  {{else}}
-    Tú: {{{this.content}}}
-  {{/if}}
+  {{this.role}}: {{{this.content}}}
 {{/each}}
 
 Tu respuesta debe ser solo el texto para el usuario. Genera sugerencias de hábitos solo cuando tenga sentido en la conversación.
