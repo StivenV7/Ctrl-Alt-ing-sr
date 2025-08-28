@@ -47,35 +47,55 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     if (authLoading) return;
-    setLoading(true);
 
+    // First, determine if the user is a member
     if (userDoc) {
       const followedIds = userDoc.data()?.followedCategoryIds || [];
-      setIsMember(followedIds.includes(categoryId));
-    } else {
-        setIsMember(false);
-    }
-    
-    // Fetch category details
-    const categoryDocRef = doc(db, 'forum_categories', categoryId);
-    getDoc(categoryDocRef).then(docSnap => {
-        if(docSnap.exists()){
-            setCategory({ id: docSnap.id, ...docSnap.data() } as ForumCategory);
-        }
-    });
+      const userIsMember = followedIds.includes(categoryId);
+      setIsMember(userIsMember);
 
-    if (!user || !isMember) {
+      // If they are not a member, we can stop loading early.
+      if (!userIsMember) {
         setLoading(false);
-        return;
+      }
+    } else {
+      setIsMember(false);
+      setLoading(false);
     }
 
+    // Fetch category details regardless of membership
+    const categoryDocRef = doc(db, 'forum_categories', categoryId);
+    const unsubCategory = onSnapshot(categoryDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCategory({ id: docSnap.id, ...docSnap.data() } as ForumCategory);
+      } else {
+        // Handle case where category doesn't exist
+        setCategory(null);
+      }
+    });
+    
+    return () => {
+      unsubCategory();
+    };
+
+  }, [user, userDoc, authLoading, categoryId]);
+
+
+  useEffect(() => {
+    // This effect runs only when `isMember` is determined and true.
+    if (!isMember) {
+      setMessages([]); // Clear messages if user is not a member
+      return;
+    };
+
+    setLoading(true);
     const q = query(
       collection(db, 'forum_messages'),
       where('categoryId', '==', categoryId),
       orderBy('timestamp', 'asc')
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
       const msgs: ForumMessage[] = [];
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
@@ -87,8 +107,11 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
         setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user, userDoc, authLoading, categoryId, isMember]);
+    return () => {
+      unsubscribeMessages();
+    }
+  }, [categoryId, isMember]);
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +135,7 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     }
   };
   
-  if (authLoading || loading) {
+  if (authLoading || (loading && isMember)) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
@@ -194,3 +217,5 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     </Card>
   );
 }
+
+    
