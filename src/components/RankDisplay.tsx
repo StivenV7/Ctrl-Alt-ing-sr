@@ -10,9 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 type RankDisplayProps = {
   rank: Rank;
   xp: number;
+  displayName: string;
 };
 
-export function RankDisplay({ rank, xp }: RankDisplayProps) {
+export function RankDisplay({ rank, xp, displayName }: RankDisplayProps) {
   const { user } = useAuth();
   const currentRankIndex = RANKS.findIndex(r => r.name === rank.name);
   const nextRank = RANKS[currentRankIndex + 1];
@@ -27,21 +28,22 @@ export function RankDisplay({ rank, xp }: RankDisplayProps) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-3 w-48">
+          <div className="flex items-center gap-3 w-full md:w-48">
             {user ? (
                <Avatar>
-                {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                <AvatarFallback>{user.displayName?.[0] ?? user.email?.[0]}</AvatarFallback>
+                {user.photoURL && <AvatarImage src={user.photoURL} alt={displayName} />}
+                <AvatarFallback>{displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
             ) : (
               <rank.icon className="h-8 w-8 text-accent" />
             )}
             <div className="w-full">
               <div className="flex justify-between items-center mb-1">
-                <p className="text-sm font-semibold">{rank.name}</p>
+                <p className="text-sm font-semibold truncate">{displayName}</p>
                 <p className="text-xs text-muted-foreground">{xp} XP</p>
               </div>
               <Progress value={progress} className="h-2" />
+               <p className="text-xs text-muted-foreground mt-1">{rank.name}</p>
             </div>
           </div>
         </TooltipTrigger>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -52,11 +53,11 @@ export default function Home() {
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        const loadedHabits = userData.habits?.map((habit: FirestoreHabit) => ({
+        const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit) => ({
           ...habit,
           entries: habit.entries || [], // Ensure entries is always an array
           icon: getIconForHabit(habit.id),
-        })) || [];
+        }));
         setHabits(loadedHabits);
         setUserXp(userData.xp || 0);
       }
@@ -205,65 +206,44 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-          <div className="flex gap-2 items-center">
-            <Logo className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold font-headline text-primary">Habitica</h1>
-          </div>
-          <div className="flex flex-1 items-center justify-end space-x-4">
-            <RankDisplay rank={currentRank} xp={userXp} />
-            <Button variant="outline" size="icon" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 p-4 md:p-8">
-        <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Card className="shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-headline">Mis Retos</CardTitle>
-                <AddHabitDialog onAddHabit={handleAddHabit}>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Reto
-                  </Button>
-                </AddHabitDialog>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {habits.length > 0 ? habits.map(habit => (
-                    <HabitDetails 
-                        key={habit.id} 
-                        habit={habit} 
-                        onUpdate={handleHabitUpdate}
-                        onDelete={handleDeleteHabit}
-                    />
-                  )) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>No tienes retos todavía.</p>
-                      <p>¡Añade uno para empezar!</p>
-                    </div>
-                  )}
+    <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+        <Card className="shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="font-headline">Mis Retos</CardTitle>
+            <AddHabitDialog onAddHabit={handleAddHabit}>
+                <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Reto
+                </Button>
+            </AddHabitDialog>
+            </CardHeader>
+            <CardContent>
+            <div className="space-y-4">
+                {habits.length > 0 ? habits.map(habit => (
+                <HabitDetails 
+                    key={habit.id} 
+                    habit={habit} 
+                    onUpdate={handleHabitUpdate}
+                    onDelete={handleDeleteHabit}
+                />
+                )) : (
+                <div className="text-center py-12 text-muted-foreground">
+                    <p>No tienes retos todavía.</p>
+                    <p>¡Añade uno para empezar!</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="lg:col-span-1">
-            <AIChatPanel 
-              chatHistory={chatHistory}
-              onSubmit={handleChatSubmit}
-              onAddHabit={handleAddHabit}
-            />
-          </div>
+                )}
+            </div>
+            </CardContent>
+        </Card>
         </div>
-      </main>
+        <div className="lg:col-span-1">
+        <AIChatPanel 
+            chatHistory={chatHistory}
+            onSubmit={handleChatSubmit}
+            onAddHabit={handleAddHabit}
+        />
+        </div>
     </div>
   );
 }
-
-    
