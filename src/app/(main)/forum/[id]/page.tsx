@@ -11,7 +11,6 @@ import {
   addDoc,
   serverTimestamp,
   doc,
-  getDoc,
   orderBy
 } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
@@ -94,7 +93,7 @@ export default function ForumCategoryPage() {
     const q = query(
       collection(db, 'forum_messages'),
       where('categoryId', '==', categoryId),
-      orderBy('timestamp', 'asc')
+      orderBy('timestamp', 'asc') // Re-add orderBy for chronological order
     );
 
     const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
@@ -102,6 +101,7 @@ export default function ForumCategoryPage() {
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
+      // Firestore returns them ordered, no need for client-side sort
       setMessages(msgs);
       setLoading(false);
     }, (error) => {
