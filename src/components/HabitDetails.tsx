@@ -22,11 +22,13 @@ type HabitDetailsProps = {
 };
 
 export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
-    const [entries, setEntries] = useState<HabitEntry[]>(habit.entries);
+    // Ensure habit.entries is always an array
+    const initialEntries = habit.entries || [];
+    const [entries, setEntries] = useState<HabitEntry[]>(initialEntries);
     const [pendingChanges, setPendingChanges] = useState<{[key: string]: Partial<HabitEntry>}>({});
     
     const completedCount = useMemo(() => entries.filter(e => e.completed).length, [entries]);
-    const progressPercentage = useMemo(() => (completedCount / habit.duration) * 100, [completedCount, habit.duration]);
+    const progressPercentage = useMemo(() => (completedCount / (habit.duration || 1)) * 100, [completedCount, habit.duration]);
     const streak = useMemo(() => calculateStreak(entries).count, [entries]);
 
     const handleEntryChange = (date: string, newValues: Partial<HabitEntry>) => {
@@ -64,7 +66,7 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
                             <span>{streak}</span>
                         </div>
                          <div className="text-sm">
-                            <p>Día {completedCount}/{habit.duration}</p>
+                            <p>Día {completedCount}/{habit.duration || 'N/A'}</p>
                             <Progress value={progressPercentage} className="h-2 mt-1" />
                         </div>
                     </div>

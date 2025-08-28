@@ -53,6 +53,7 @@ export default function Home() {
         const userData = docSnap.data();
         const loadedHabits = userData.habits?.map((habit: FirestoreHabit) => ({
           ...habit,
+          entries: habit.entries || [], // Ensure entries is always an array
           icon: getIconForHabit(habit.id),
         })) || [];
         setHabits(loadedHabits);
@@ -103,7 +104,7 @@ export default function Home() {
 
     const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
-            const oldCompletedCount = h.entries.filter(e => e.completed).length;
+            const oldCompletedCount = (h.entries || []).filter(e => e.completed).length;
             const newCompletedCount = updatedEntries.filter(e => e.completed).length;
             
             newXp += (newCompletedCount - oldCompletedCount);
