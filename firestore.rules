@@ -1,39 +1,34 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Reglas para la colección 'users'
+    // Los usuarios pueden leer cualquier perfil (necesario para nombres en el foro, etc.), 
+    // pero solo pueden escribir en su propio documento. Los administradores pueden escribir en cualquier perfil.
     match /users/{userId} {
-      // Cualquier usuario autenticado puede leer los perfiles de otros (para ver nombres en el foro, etc.).
       allow read: if request.auth != null;
-      
-      // Un usuario solo puede escribir en su propio documento.
-      // Un administrador puede escribir en el documento de cualquier usuario.
       allow write: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
-    // Reglas para la colección de categorías del foro
+    // Las categorías del foro pueden ser leídas por cualquier usuario autenticado.
+    // Solo un administrador puede crear, actualizar o eliminar categorías directamente.
     match /forum_categories/{categoryId} {
-      // Cualquiera puede leer la lista de categorías.
       allow read: if request.auth != null;
-      // Solo un administrador puede crear o eliminar categorías directamente.
-      allow create, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Reglas para la colección de sugerencias de categorías
+    // Los usuarios autenticados pueden crear sugerencias de categorías.
+    // Solo un administrador puede leerlas, actualizarlas o eliminarlas.
     match /category_suggestions/{suggestionId} {
-      // Solo un administrador puede leer y actualizar las sugerencias.
-      allow read, update: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      // Cualquier usuario puede crear una sugerencia para sí mismo.
+      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow create: if request.auth != null && request.resource.data.requestedBy == request.auth.uid;
     }
     
-    // Reglas para los mensajes del foro
+    // Los mensajes del foro pueden ser leídos por cualquier usuario autenticado.
+    // Solo los miembros de una comunidad pueden escribir en ella.
     match /forum_messages/{messageId} {
-      // Cualquiera puede leer mensajes. La app filtra qué foros mostrar.
       allow read: if request.auth != null;
-      // Solo los miembros de una comunidad pueden escribir en ella.
       allow create: if request.auth != null 
                       && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.followedCategoryIds.has(request.resource.data.categoryId);
       // No se permite actualizar o eliminar mensajes.

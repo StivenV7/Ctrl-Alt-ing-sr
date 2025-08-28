@@ -91,8 +91,8 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     setLoading(true);
     const q = query(
       collection(db, 'forum_messages'),
-      where('categoryId', '==', categoryId)
-      // orderBy('timestamp', 'asc') // This was causing the index error
+      where('categoryId', '==', categoryId),
+      orderBy('timestamp', 'asc') 
     );
 
     const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
@@ -100,8 +100,6 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
-      // Sort messages by timestamp on the client side
-      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
       setMessages(msgs);
       setLoading(false);
     }, (error) => {
