@@ -174,17 +174,21 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <SheetPrimitive.Root open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <SheetPrimitive.Root open={openMobile} onOpenChange={setOpenMobile}>
           <SheetPrimitive.Content
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className={cn(
+                "w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground",
+                className
+            )}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
             side={side}
+             {...props}
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetPrimitive.Content>
@@ -216,7 +220,21 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, isMobile } = useSidebar()
+
+  if (isMobile) {
+    return (
+        <SheetPrimitive.Trigger
+            ref={ref as React.Ref<HTMLButtonElement>}
+            className={cn(className)}
+            onClick={(event) => {
+              onClick?.(event)
+              toggleSidebar()
+            }}
+             {...props}
+        />
+    )
+  }
 
   return (
     <Button
@@ -259,22 +277,22 @@ const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
-    const { state } = useSidebar();
+    const { state, isMobile } = useSidebar();
   return (
     <div
       ref={ref}
       data-sidebar="header"
       className={cn(
           "flex items-center border-b p-3",
-          state === 'collapsed' ? 'justify-center' : '',
+          !isMobile && state === 'collapsed' ? 'justify-center' : '',
           className
         )}
       {...props}
     >
-        <div className={cn(state === 'collapsed' ? 'hidden' : 'flex', 'w-full items-center')}>
+        <div className={cn(!isMobile && state === 'collapsed' ? 'hidden' : 'flex', 'w-full items-center')}>
          {props.children}
         </div>
-        <div className={cn(state === 'expanded' ? 'hidden' : 'flex')}>
+        <div className={cn(!isMobile && state === 'expanded' ? 'hidden' : 'flex', isMobile ? 'hidden': 'flex')}>
             <SidebarTrigger />
         </div>
     </div>
@@ -391,24 +409,28 @@ const SidebarMenuButton = React.forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
-    const { state } = useSidebar()
+    const { state, isMobile } = useSidebar()
 
     const buttonContent = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ isActive }), state === 'collapsed' ? 'justify-center' : '', className)}
+        className={cn(sidebarMenuButtonVariants({ isActive }), !isMobile && state === 'collapsed' ? 'justify-center' : '', className)}
         {...props}
       >
         {children}
       </Comp>
     )
 
-    if (state === 'expanded') {
+    if (!isMobile && state === 'expanded') {
         return buttonContent;
     }
     
+    if (isMobile) {
+        return buttonContent;
+    }
+
     if (!tooltip) {
       return buttonContent
     }
