@@ -8,12 +8,11 @@ import { db } from '@/lib/firebase';
 import { useState, useEffect, useCallback } from 'react';
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { usePathname } from 'next/navigation';
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/Sidebar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { SidebarNavContent } from '@/components/Sidebar';
 import { Logo } from '@/components/icons';
-import { useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
 
@@ -32,7 +31,13 @@ const MobileHeader = () => {
                     </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0">
-                    <AppSidebar />
+                    <SheetHeader className="p-3 border-b">
+                      <SheetTitle className="flex items-center gap-2">
+                          <Logo className="size-8 text-primary" />
+                          <span className="text-xl font-bold text-primary">Habitica</span>
+                      </SheetTitle>
+                    </SheetHeader>
+                    <SidebarNavContent />
                 </SheetContent>
             </Sheet>
         </header>
@@ -48,13 +53,13 @@ export default function MainLayout({
 
   return (
     <SidebarProvider>
-        <div className='hidden md:block'>
-         <AppSidebar />
-        </div>
+        <Sidebar className='hidden md:flex'>
+             <SidebarNavContent />
+        </Sidebar>
         <SidebarInset>
             <MobileHeader />
             <main className="p-4 sm:px-6 sm:py-0 md:p-8">
-              {children}
+                {children}
             </main>
         </SidebarInset>
         <BottomNavbar />

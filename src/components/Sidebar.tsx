@@ -26,7 +26,7 @@ const navItems = [
 ];
 
 
-export function AppSidebar() {
+export function SidebarNavContent() {
   const pathname = usePathname();
   const { user, signOut, isAdmin, userDoc } = useAuth();
   const displayName = userDoc?.data()?.displayName || user?.displayName || 'Usuario';
@@ -37,7 +37,7 @@ export function AppSidebar() {
   }, [userXp]);
 
   return (
-    <Sidebar>
+    <>
         <SidebarHeader>
              <div className="flex items-center gap-2">
                 <Logo className="size-8 text-primary" />
@@ -87,6 +87,6 @@ export function AppSidebar() {
                 </div>
             )}
         </SidebarFooter>
-    </Sidebar>
+    </>
   );
 }
