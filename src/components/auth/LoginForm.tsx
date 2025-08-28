@@ -73,7 +73,8 @@ export function LoginForm({ setError }: LoginFormProps) {
             displayName: values.username,
         });
 
-        const theme = values.gender === 'male' ? 'blue' : values.gender === 'female' ? 'pink' : 'light';
+        const userGender = values.gender || 'prefer-not-to-say';
+        const theme = userGender === 'male' ? 'blue' : userGender === 'female' ? 'pink' : 'light';
         setTheme(theme);
         
         // Create user document in Firestore
@@ -81,7 +82,7 @@ export function LoginForm({ setError }: LoginFormProps) {
           uid: user.uid,
           displayName: values.username,
           email: values.email,
-          gender: values.gender || 'prefer-not-to-say',
+          gender: userGender,
           theme: theme,
           xp: 0,
           habits: [], // Start with an empty list of habits
