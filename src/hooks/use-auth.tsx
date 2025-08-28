@@ -8,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, onSnapshot, updateDoc } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -49,14 +49,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userRef = doc(db, 'users', user.uid);
         
         // Use onSnapshot to listen for real-time updates to the user document
-        const unsubDoc = onSnapshot(userRef, (docSnap) => {
+        const unsubDoc = onSnapshot(userRef, async (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setUserDoc(docSnap);
-                const userRole = data.role || 'user';
-                const userTheme = data.theme || 'light';
-                setIsAdmin(userRole === 'admin');
-                setTheme(userTheme);
+                
+                // --- MIGRATION LOGIC ---
+                // If user exists but doesn't have a role, assign 'user' role.
+                if (!data.role) {
+                  await updateDoc(userRef, { role: 'user' });
+                  // The snapshot will update automatically after this, so no need to manually set state here.
+                } else {
+                  setUserDoc(docSnap);
+                  const userRole = data.role || 'user';
+                  const userTheme = data.theme || 'light';
+                  setIsAdmin(userRole === 'admin');
+                  setTheme(userTheme);
+                }
             }
             setLoading(false);
         }, (error) => {
@@ -77,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
 
   const signOut = async () => {
     await firebaseSignOut(auth);
