@@ -11,7 +11,6 @@ import {
   addDoc,
   serverTimestamp,
   doc,
-  orderBy
 } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -161,10 +160,10 @@ export default function ForumCategoryPage() {
   }
 
   return (
-    <Card className="shadow-lg h-full flex flex-col max-h-[calc(100vh-12rem)]">
+    <Card className="shadow-lg h-full flex flex-col max-h-[calc(100vh-10rem)] md:max-h-[calc(100vh-8rem)]">
       <CardHeader className="border-b">
         <div className="flex items-center gap-4">
-            <Link href="/forum" className="p-2 rounded-full hover:bg-muted">
+            <Link href="/forum" className="p-2 rounded-full hover:bg-muted md:hidden">
                 <ArrowLeft className="h-5 w-5" />
             </Link>
             <div >

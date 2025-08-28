@@ -4,7 +4,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast"
 import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from '@/lib/types';
-import { RANKS } from '@/lib/constants';
 import { chat } from '@/ai/flows/chat-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
@@ -14,11 +13,9 @@ import { addDays, format, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, PlusCircle, Sparkles, LogOut, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
+import { PlusCircle, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
-import { RankDisplay } from '@/components/RankDisplay';
 import { AIChatPanel } from '@/components/AIChatPanel';
-import { Logo } from '@/components/icons';
 import { HabitDetails } from '@/components/HabitDetails';
 import { calculateStreak } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
@@ -96,10 +93,6 @@ export default function Home() {
     }
   }, [userRef, toast]);
   
-  const currentRank = useMemo(() => {
-    return [...RANKS].reverse().find(rank => userXp >= rank.minXp) ?? RANKS[0];
-  }, [userXp]);
-
   const handleHabitUpdate = (habitId: string, updatedEntries: HabitEntry[]) => {
     let newXp = userXp;
     
@@ -247,4 +240,3 @@ export default function Home() {
     </div>
   );
 }
-

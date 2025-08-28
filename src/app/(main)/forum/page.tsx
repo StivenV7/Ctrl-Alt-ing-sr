@@ -136,57 +136,58 @@ export default function ForumHomePage() {
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-            <div className="flex items-center gap-2">
-                <Users className="h-6 w-6 text-primary" />
-                <CardTitle className="font-headline">Explorar Comunidades</CardTitle>
-            </div>
-            <CardDescription>Únete a las conversaciones que te interesan.</CardDescription>
-        </div>
-        <AddCategoryDialog 
-            onCreate={isAdmin ? handleCreateCategory : handleSuggestCategory}
-            isAdmin={isAdmin}
-        >
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {isAdmin ? 'Crear Comunidad' : 'Sugerir Comunidad'}
-            </Button>
-        </AddCategoryDialog>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {categories.length > 0 ? (
-            categories.map((cat) => {
-              const isFollowing = followedCategoryIds.includes(cat.id);
-              return (
-                <Card key={cat.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                  <div className="flex-grow">
-                    <Link href={`/forum/${cat.id}`} className="block">
-                      <h3 className="font-semibold text-lg hover:underline">{cat.name}</h3>
-                      <p className="text-sm text-muted-foreground">{cat.description}</p>
-                    </Link>
-                  </div>
-                  <div className="ml-4 flex-shrink-0">
-                    <Button
-                      variant={isFollowing ? 'outline' : 'default'}
-                      onClick={() => handleToggleFollow(cat.id)}
-                    >
-                      {isFollowing ? 'Dejar de Seguir' : 'Unirme'}
+    <div className="space-y-4">
+       <Card>
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Users className="h-6 w-6 text-primary" />
+                        <CardTitle className="font-headline">Explorar Comunidades</CardTitle>
+                    </div>
+                    <CardDescription className="mt-1">Únete a las conversaciones que te interesan.</CardDescription>
+                </div>
+                <AddCategoryDialog 
+                    onCreate={isAdmin ? handleCreateCategory : handleSuggestCategory}
+                    isAdmin={isAdmin}
+                >
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        {isAdmin ? 'Crear Comunidad' : 'Sugerir Comunidad'}
                     </Button>
-                  </div>
-                </Card>
-              );
-            })
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No hay comunidades todavía.</p>
-              <p>¡Crea o sugiere la primera!</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                </AddCategoryDialog>
+            </CardHeader>
+        </Card>
+
+      <div className="space-y-4">
+        {categories.length > 0 ? (
+          categories.map((cat) => {
+            const isFollowing = followedCategoryIds.includes(cat.id);
+            return (
+              <Card key={cat.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-muted/50 transition-colors gap-4">
+                <div className="flex-grow">
+                  <Link href={`/forum/${cat.id}`} className="block">
+                    <h3 className="font-semibold text-lg hover:underline">{cat.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{cat.description}</p>
+                  </Link>
+                </div>
+                <div className="ml-auto flex-shrink-0 self-end sm:self-center">
+                  <Button
+                    variant={isFollowing ? 'outline' : 'default'}
+                    onClick={() => handleToggleFollow(cat.id)}
+                  >
+                    {isFollowing ? 'Dejar de Seguir' : 'Unirme'}
+                  </Button>
+                </div>
+              </Card>
+            );
+          })
+        ) : (
+          <Card className="text-center py-12 text-muted-foreground">
+            <p>No hay comunidades todavía.</p>
+            <p>¡Crea o sugiere la primera!</p>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 }

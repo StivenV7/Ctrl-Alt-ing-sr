@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, MessageSquarePlus, Hash } from 'lucide-react';
@@ -62,7 +62,7 @@ export function ForumSidebar() {
   }
 
   return (
-    <Card className="sticky top-20">
+    <Card className="sticky top-24">
       <CardHeader>
         <CardTitle className="font-headline">Mis Comunidades</CardTitle>
         <CardDescription>Tus conversaciones activas.</CardDescription>
@@ -77,7 +77,7 @@ export function ForumSidebar() {
                         key={cat.id}
                         href={`/forum/${cat.id}`}
                         className={cn(
-                            buttonVariants({ variant: isActive ? 'default' : 'ghost', size: 'sm'}),
+                            buttonVariants({ variant: isActive ? 'secondary' : 'ghost', size: 'sm'}),
                             'justify-start'
                         )}
                     >
@@ -103,4 +103,3 @@ export function ForumSidebar() {
     </Card>
   );
 }
-

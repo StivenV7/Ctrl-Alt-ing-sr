@@ -15,7 +15,6 @@ import {
   serverTimestamp,
   deleteDoc,
   query,
-  orderBy
 } from 'firebase/firestore';
 import { FirestoreUser, ForumCategory, CategorySuggestion } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -143,7 +142,6 @@ export default function AdminPage() {
   }
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
-  const processedSuggestions = suggestions.filter(s => s.status !== 'pending');
 
   return (
     <div className="space-y-8">

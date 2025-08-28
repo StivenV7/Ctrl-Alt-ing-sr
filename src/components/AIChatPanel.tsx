@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -51,7 +52,7 @@ export function AIChatPanel({
   const initialMessage = !chatHistory || chatHistory.length === 0;
 
   return (
-    <Card className="shadow-lg sticky top-20 flex flex-col h-[calc(100vh-6rem)] max-h-[800px]">
+    <Card className="shadow-lg sticky top-24 flex flex-col h-[calc(100vh-8rem)] max-h-[800px]">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
