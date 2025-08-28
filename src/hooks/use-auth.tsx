@@ -8,7 +8,6 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { INITIAL_HABITS } from '@/lib/constants';
 
 
 interface AuthContextType {
@@ -46,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         theme: 'light', // Default theme
         xp: 0,
         goals: 'Mejorar mi constancia y bienestar general.',
-        habits: INITIAL_HABITS.map(({icon, ...rest}) => rest),
+        habits: [],
       });
     }
     setTheme(userTheme as 'light' | 'blue' | 'pink');

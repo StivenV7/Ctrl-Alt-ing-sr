@@ -15,7 +15,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { INITIAL_HABITS } from '@/lib/constants';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, introduce un correo válido.' }),
@@ -86,7 +85,7 @@ export function LoginForm({ setError }: LoginFormProps) {
           theme: theme,
           xp: 0,
           goals: 'Mejorar mi constancia y bienestar general.',
-          habits: INITIAL_HABITS.map(({icon, ...rest}) => rest), // Don't store functions/React components
+          habits: [], // Start with an empty list of habits
         });
       }
     } catch (error: any) {

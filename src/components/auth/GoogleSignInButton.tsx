@@ -6,7 +6,6 @@ import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { INITIAL_HABITS } from '@/lib/constants';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 48 48">
@@ -45,7 +44,7 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
           theme: 'light', // Default theme for Google sign-ups
           xp: 0,
           goals: 'Mejorar mi constancia y bienestar general.',
-          habits: INITIAL_HABITS.map(({icon, ...rest}) => rest),
+          habits: [],
         });
       }
       
