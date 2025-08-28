@@ -22,7 +22,7 @@ const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_WIDTH_ICON = "3.5rem" // Increased width for icons
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type SidebarContext = {
@@ -170,23 +170,15 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-
-    if (isMobile) {
-      return (
-        <div className="md:hidden">
-            {children}
-        </div>
-      )
-    }
+    const { state } = useSidebar()
 
     return (
       <div
         ref={ref}
         className={cn(
-            "group peer hidden md:flex flex-col text-sidebar-foreground transition-all duration-300 ease-in-out",
+            "group peer flex flex-col text-sidebar-foreground transition-all duration-300 ease-in-out",
             "h-full border-r",
-            state === 'expanded' ? 'w-[--sidebar-width]' : 'w-[--sidebar-width-icon]',
+            state === 'expanded' ? 'w-full md:w-[--sidebar-width]' : 'w-full md:w-[--sidebar-width-icon]',
             className
         )}
         data-state={state}
@@ -254,15 +246,17 @@ const SidebarHeader = React.forwardRef<
       data-sidebar="header"
       className={cn(
           "flex items-center border-b p-3",
-          !isMobile && state === 'collapsed' ? 'justify-center' : '',
           className
         )}
       {...props}
     >
-        <div className={cn(!isMobile && state === 'collapsed' ? 'hidden' : 'flex', 'w-full items-center')}>
+        <div className={cn(
+            'flex w-full items-center',
+             state === 'collapsed' && 'hidden md:flex'
+            )}>
          {props.children}
         </div>
-        <div className={cn(!isMobile && state === 'expanded' ? 'hidden' : 'flex', isMobile ? 'hidden': 'flex')}>
+        <div className={cn('hidden', state === 'expanded' && 'md:flex')}>
             <SidebarTrigger />
         </div>
     </div>
@@ -274,11 +268,14 @@ const SidebarFooter = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
+  const { state } = useSidebar();
   return (
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-3 mt-auto border-t", className)}
+      className={cn("flex flex-col gap-2 p-3 mt-auto border-t",
+        state === 'collapsed' && 'hidden md:flex',
+       className)}
       {...props}
     />
   )
@@ -386,18 +383,21 @@ const SidebarMenuButton = React.forwardRef<
         ref={ref}
         data-sidebar="menu-button"
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ isActive }), !isMobile && state === 'collapsed' ? 'justify-center' : '', className)}
+        className={cn(sidebarMenuButtonVariants({ isActive }),
+            state === 'collapsed' && 'hidden md:flex md:justify-center',
+         className)}
         {...props}
       >
-        {children}
+        {React.Children.map(children, (child, i) => {
+            if(i === 0) return child;
+            if(state === 'expanded' || isMobile) return child;
+            if(state === 'collapsed' && !isMobile) return null;
+            return child
+        })}
       </Comp>
     )
 
-    if (!isMobile && state === 'expanded') {
-        return buttonContent;
-    }
-    
-    if (isMobile) {
+    if (isMobile || state === 'expanded') {
         return buttonContent;
     }
 

@@ -14,6 +14,7 @@ import { Logo } from '@/components/icons';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
 
 const MobileHeader = () => {
@@ -25,7 +26,10 @@ const MobileHeader = () => {
             </div>
             <Sheet>
                 <SheetTrigger asChild>
-                    <SidebarTrigger />
+                    <button className="p-2 -mr-2">
+                        <Menu className="h-6 w-6" />
+                        <span className="sr-only">Abrir menú</span>
+                    </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0">
                     <AppSidebar />
@@ -44,7 +48,9 @@ export default function MainLayout({
 
   return (
     <SidebarProvider>
-        <AppSidebar />
+        <div className='hidden md:block'>
+         <AppSidebar />
+        </div>
         <SidebarInset>
             <MobileHeader />
             <main className="p-4 sm:px-6 sm:py-0 md:p-8">
