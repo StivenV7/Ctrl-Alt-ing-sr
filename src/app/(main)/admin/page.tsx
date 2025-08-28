@@ -68,11 +68,18 @@ export default function AdminPage() {
     });
 
     // Fetch suggestions
-    const suggestionsQuery = query(collection(db, 'category_suggestions'), orderBy('createdAt', 'desc'));
+    const suggestionsQuery = query(collection(db, 'category_suggestions'));
     const suggestionsUnsub = onSnapshot(suggestionsQuery, (snapshot) => {
       const suggestionList: CategorySuggestion[] = [];
       snapshot.forEach((doc) => suggestionList.push({ id: doc.id, ...doc.data() } as CategorySuggestion));
-      setSuggestions(suggestionList);
+      // Sort suggestions by date descending on the client-side
+      const sortedSuggestions = suggestionList.sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        }
+        return 0;
+      });
+      setSuggestions(sortedSuggestions);
     }, (error) => {
         console.error("Error fetching suggestions:", error);
         toast({title: 'Error de Permisos', description: 'No se pudieron cargar las sugerencias.', variant: 'destructive'});
