@@ -174,25 +174,9 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <SheetPrimitive.Root open={openMobile} onOpenChange={setOpenMobile}>
-          <SheetPrimitive.Content
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className={cn(
-                "w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground",
-                className
-            )}
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-            side={side}
-             {...props}
-          >
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetPrimitive.Content>
-        </SheetPrimitive.Root>
+        <div className="md:hidden">
+            {children}
+        </div>
       )
     }
 
@@ -220,21 +204,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar, isMobile } = useSidebar()
-
-  if (isMobile) {
-    return (
-        <SheetPrimitive.Trigger
-            ref={ref as React.Ref<HTMLButtonElement>}
-            className={cn(className)}
-            onClick={(event) => {
-              onClick?.(event)
-              toggleSidebar()
-            }}
-             {...props}
-        />
-    )
-  }
+  const { toggleSidebar } = useSidebar()
 
   return (
     <Button

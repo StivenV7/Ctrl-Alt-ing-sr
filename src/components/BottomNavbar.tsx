@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Home, MessagesSquare, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './ui/sidebar';
+import { Sheet, SheetTrigger, SheetContent } from './ui/sheet';
+import { AppSidebar } from './Sidebar';
 
 const navItems = [
   { href: '/', label: 'Inicio', icon: Home },
@@ -35,13 +37,17 @@ export function BottomNavbar() {
             </Link>
           );
         })}
-        <div 
-            onClick={toggleSidebar}
-            className="flex flex-col items-center justify-center gap-1 w-full text-sm font-medium transition-colors text-muted-foreground hover:text-primary h-full cursor-pointer"
-        >
-            <Menu className="h-6 w-6" />
-            <span>Menú</span>
-        </div>
+        <Sheet>
+            <SheetTrigger asChild>
+                <div className="flex flex-col items-center justify-center gap-1 w-full text-sm font-medium transition-colors text-muted-foreground hover:text-primary h-full cursor-pointer">
+                    <Menu className="h-6 w-6" />
+                    <span>Menú</span>
+                </div>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0">
+                <AppSidebar />
+            </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

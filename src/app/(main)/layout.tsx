@@ -11,6 +11,29 @@ import { usePathname } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/Sidebar';
 import { Logo } from '@/components/icons';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
+
+const MobileHeader = () => {
+    return (
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
+            <div className="flex items-center gap-2">
+            <Logo className="size-7 text-primary" />
+            <span className="text-lg font-bold text-primary">Habitica</span>
+            </div>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <SidebarTrigger />
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0">
+                    <AppSidebar />
+                </SheetContent>
+            </Sheet>
+        </header>
+    );
+};
 
 
 export default function MainLayout({
@@ -18,21 +41,12 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isForumPage = pathname.startsWith('/forum');
-  const isSettingsPage = pathname.startsWith('/settings');
 
   return (
     <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-            <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
-                 <div className="flex items-center gap-2">
-                    <Logo className="size-7 text-primary" />
-                    <span className="text-lg font-bold text-primary">Habitica</span>
-                 </div>
-                <SidebarTrigger />
-            </header>
+            <MobileHeader />
             <main className="p-4 sm:px-6 sm:py-0 md:p-8">
               {children}
             </main>
@@ -41,4 +55,3 @@ export default function MainLayout({
     </SidebarProvider>
   );
 }
-
