@@ -81,7 +81,7 @@ export function LoginForm({ setError }: LoginFormProps) {
           uid: user.uid,
           displayName: values.username,
           email: values.email,
-          gender: values.gender,
+          gender: values.gender || 'prefer-not-to-say',
           theme: theme,
           xp: 0,
           habits: [], // Start with an empty list of habits
