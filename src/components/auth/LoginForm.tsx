@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, introduce un correo válido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
   username: z.string().optional(),
-  gender: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']).optional(),
 }).refine(data => {
   if (data.username && data.username.length < 3) {
     return false;
@@ -37,6 +38,7 @@ type LoginFormProps = {
 export function LoginForm({ setError }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
+  const { setTheme } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,9 +51,16 @@ export function LoginForm({ setError }: LoginFormProps) {
     try {
       if (activeTab === 'signin') {
         await signInWithEmailAndPassword(auth, values.email, values.password);
+        // We can't know gender on sign-in, so we could default or retrieve it from a DB
+        // For now, we'll just let the AuthProvider handle the theme from localStorage
       } else {
         if (!values.username) {
             form.setError("username", { type: "manual", message: "El nombre de usuario es requerido."});
+            setLoading(false);
+            return;
+        }
+        if (!values.gender) {
+            form.setError("gender", { type: "manual", message: "El sexo es requerido."});
             setLoading(false);
             return;
         }
@@ -59,6 +68,15 @@ export function LoginForm({ setError }: LoginFormProps) {
         await updateProfile(userCredential.user, {
             displayName: values.username,
         });
+
+        // Set theme based on gender
+        if (values.gender === 'male') {
+          setTheme('blue');
+        } else if (values.gender === 'female') {
+          setTheme('pink');
+        } else {
+          setTheme('light');
+        }
       }
       // Redirect is handled by the parent page's useAuth hook
     } catch (error: any) {

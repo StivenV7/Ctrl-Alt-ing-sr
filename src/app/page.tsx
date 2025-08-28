@@ -168,7 +168,7 @@ export default function Home() {
               <CardContent>
                 <div className="space-y-4">
                   {habits.length > 0 ? habits.map(habit => (
-                    <Card key={habit.id} className={`transition-all duration-300 ${habit.completed ? 'bg-green-100 dark:bg-green-900/30 border-primary/50' : ''}`}>
+                    <Card key={habit.id} className={`transition-all duration-300 ${habit.completed ? 'bg-accent/50 border-primary/50' : ''}`}>
                       <CardContent className="p-4 flex items-center gap-4">
                         <Checkbox 
                           id={`habit-${habit.id}`}
