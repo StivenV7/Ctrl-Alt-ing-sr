@@ -32,11 +32,11 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      const additionalUserInfo = getAdditionalUserInfo(result);
-      
-      if (additionalUserInfo?.isNewUser) {
+      const userRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userRef);
+
+      if (!docSnap.exists()) {
         // If it's a new user, create their document in Firestore.
-        const userRef = doc(db, "users", user.uid);
         await setDoc(userRef, {
           uid: user.uid,
           displayName: user.displayName,

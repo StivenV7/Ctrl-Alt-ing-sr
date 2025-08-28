@@ -32,10 +32,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userRef = doc(db, 'users', user.uid);
     const docSnap = await getDoc(userRef);
 
-    let userTheme = 'light';
+    let userTheme: 'light' | 'blue' | 'pink' = 'light';
     if (docSnap.exists()) {
       userTheme = docSnap.data().theme || 'light';
     } else {
+       console.log("Creating new user document in use-auth");
       // Document doesn't exist, so this is a new or returning user without a doc.
       // Let's create one.
       await setDoc(userRef, {
@@ -48,15 +49,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         habits: [],
       });
     }
-    setTheme(userTheme as 'light' | 'blue' | 'pink');
+    setTheme(userTheme);
   };
 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       if (user) {
-        setUser(user);
         await checkAndCreateUserDocument(user);
+        setUser(user);
       } else {
         setUser(null);
         // On signout, reset to default theme
@@ -69,8 +71,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const setTheme = (theme: 'light' | 'blue' | 'pink') => {
-    localStorage.setItem('habitica-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem('habitica-theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }
   };
 
   const signOut = async () => {

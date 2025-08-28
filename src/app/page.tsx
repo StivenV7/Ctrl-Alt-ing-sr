@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
 import type { Habit, FirestoreHabit } from '@/lib/types';
-import { INITIAL_HABITS, RANKS } from '@/lib/constants';
+import { RANKS } from '@/lib/constants';
 import { getHabitInsights, type HabitInsightsOutput } from '@/ai/flows/habit-insights';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { BookOpen, Dumbbell, HeartPulse } from 'lucide-react';
 
@@ -54,17 +54,17 @@ export default function Home() {
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        const loadedHabits = userData.habits.map((habit: FirestoreHabit) => ({
+        const loadedHabits = userData.habits?.map((habit: FirestoreHabit) => ({
           ...habit,
           icon: getIconForHabit(habit.id),
-        }));
+        })) || [];
         setHabits(loadedHabits);
         setUserXp(userData.xp || 0);
         setUserGoals(userData.goals || '');
       } else {
-        // This case should be handled by the useAuth hook now,
-        // but we can leave a log here for debugging.
-        console.log("User document not found on page load, should have been created on login.");
+        // This can happen for a brief moment for new users.
+        // The auth hook will create it, and the listener will re-run this.
+        console.log("User document not found, waiting for creation...");
       }
     } catch (error) {
       console.error("Error loading user data:", error);
