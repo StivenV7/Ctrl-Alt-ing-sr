@@ -4,6 +4,8 @@ import type { Rank } from '@/lib/types';
 import { RANKS } from '@/lib/constants';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type RankDisplayProps = {
   rank: Rank;
@@ -11,6 +13,7 @@ type RankDisplayProps = {
 };
 
 export function RankDisplay({ rank, xp }: RankDisplayProps) {
+  const { user } = useAuth();
   const currentRankIndex = RANKS.findIndex(r => r.name === rank.name);
   const nextRank = RANKS[currentRankIndex + 1];
 
@@ -25,7 +28,14 @@ export function RankDisplay({ rank, xp }: RankDisplayProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center gap-3 w-48">
-            <rank.icon className="h-8 w-8 text-accent" />
+            {user ? (
+               <Avatar>
+                {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
+                <AvatarFallback>{user.displayName?.[0] ?? user.email?.[0]}</AvatarFallback>
+              </Avatar>
+            ) : (
+              <rank.icon className="h-8 w-8 text-accent" />
+            )}
             <div className="w-full">
               <div className="flex justify-between items-center mb-1">
                 <p className="text-sm font-semibold">{rank.name}</p>

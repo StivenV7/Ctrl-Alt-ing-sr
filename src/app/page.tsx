@@ -3,15 +3,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
-import type { Habit, Rank } from '@/lib/types';
+import type { Habit } from '@/lib/types';
 import { INITIAL_HABITS, RANKS } from '@/lib/constants';
 import { getHabitInsights, type HabitInsightsOutput } from '@/ai/flows/habit-insights';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Flame, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { Flame, PlusCircle, Sparkles, TrendingUp, LogOut } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
 import { RankDisplay } from '@/components/RankDisplay';
 import { InsightsPanel } from '@/components/InsightsPanel';
@@ -25,6 +27,14 @@ export default function Home() {
   const [insights, setInsights] = useState<HabitInsightsOutput['insights']>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const { toast } = useToast();
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     // On initial load, set habits and calculate initial XP
@@ -121,6 +131,9 @@ export default function Home() {
     }
   };
 
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
@@ -132,6 +145,9 @@ export default function Home() {
           </div>
           <div className="flex flex-1 items-center justify-end space-x-4">
             <RankDisplay rank={currentRank} xp={userXp} />
+            <Button variant="outline" size="icon" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
