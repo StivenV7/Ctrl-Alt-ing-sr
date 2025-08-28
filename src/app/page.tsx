@@ -59,11 +59,8 @@ export default function Home() {
         })) || [];
         setHabits(loadedHabits);
         setUserXp(userData.xp || 0);
-        setChatHistory(userData.chatHistory || []);
-      } else {
-        // This can happen for a brief moment for new users.
-        // The auth hook will create it, and the listener will re-run this.
-        console.log("User document not found, waiting for creation...");
+        // Do not load chat history, it's ephemeral
+        // setChatHistory(userData.chatHistory || []); 
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -88,7 +85,6 @@ export default function Home() {
   const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
     if (!userRef) return;
     try {
-      // Use setDoc with merge to create if not exists, or update if exists.
       await setDoc(userRef, dataToSave, { merge: true });
     } catch (error) {
       console.error("Error saving data:", error);
@@ -186,7 +182,8 @@ export default function Home() {
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.answer, suggestions: result.suggestions };
       const finalHistory = [...newHistory, assistantMessage];
       setChatHistory(finalHistory);
-      saveData({ chatHistory: finalHistory });
+      // We don't save the chat history anymore. It's ephemeral.
+      // saveData({ chatHistory: finalHistory });
       
       return result;
     } catch (error) {
