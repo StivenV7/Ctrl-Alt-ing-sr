@@ -4,18 +4,30 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, introduce un correo válido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
+  username: z.string().optional(),
+  gender: z.string().optional(),
+}).refine(data => {
+  if (data.username && data.username.length < 3) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'El nombre de usuario debe tener al menos 3 caracteres.',
+  path: ['username'],
 });
 
 type LoginFormProps = {
@@ -28,7 +40,7 @@ export function LoginForm({ setError }: LoginFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', username: '' },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -38,7 +50,15 @@ export function LoginForm({ setError }: LoginFormProps) {
       if (activeTab === 'signin') {
         await signInWithEmailAndPassword(auth, values.email, values.password);
       } else {
-        await createUserWithEmailAndPassword(auth, values.email, values.password);
+        if (!values.username) {
+            form.setError("username", { type: "manual", message: "El nombre de usuario es requerido."});
+            setLoading(false);
+            return;
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        await updateProfile(userCredential.user, {
+            displayName: values.username,
+        });
       }
       // Redirect is handled by the parent page's useAuth hook
     } catch (error: any) {
@@ -111,6 +131,19 @@ export function LoginForm({ setError }: LoginFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
               control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre de usuario</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Tu nombre de usuario" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -131,6 +164,29 @@ export function LoginForm({ setError }: LoginFormProps) {
                   <FormControl>
                     <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sexo</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona tu sexo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Masculino</SelectItem>
+                      <SelectItem value="female">Femenino</SelectItem>
+                      <SelectItem value="other">Otro</SelectItem>
+                      <SelectItem value="prefer-not-to-say">Prefiero no decirlo</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
