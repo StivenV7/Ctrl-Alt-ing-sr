@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { INITIAL_HABITS } from '@/lib/constants';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 48 48">
@@ -28,11 +30,29 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // Redirect is handled by the parent page's useAuth hook
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const additionalUserInfo = getAdditionalUserInfo(result);
+      
+      if (additionalUserInfo?.isNewUser) {
+        // If it's a new user, create their document in Firestore.
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          theme: 'light', // Default theme for Google sign-ups
+          xp: 0,
+          goals: 'Mejorar mi constancia y bienestar general.',
+          habits: INITIAL_HABITS.map(({icon, ...rest}) => rest),
+        });
+      }
+      
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
         setError('Error al iniciar sesión con Google. Inténtalo de nuevo.');
+        console.error("Google Sign-In Error:", error);
       }
     } finally {
       setLoading(false);
@@ -46,7 +66,7 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
       ) : (
         <GoogleIcon />
       )}
-      Continuar con Google
+      <span className="ml-2">Continuar con Google</span>
     </Button>
   );
 }

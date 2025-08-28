@@ -62,7 +62,9 @@ export default function Home() {
         setUserXp(userData.xp || 0);
         setUserGoals(userData.goals || '');
       } else {
-        console.log("No such document! Should have been created on signup.");
+        // This case should be handled by the useAuth hook now,
+        // but we can leave a log here for debugging.
+        console.log("User document not found on page load, should have been created on login.");
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -87,7 +89,8 @@ export default function Home() {
   const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
     if (!userRef) return;
     try {
-      await updateDoc(userRef, dataToSave);
+      // Use setDoc with merge to create if not exists, or update if exists.
+      await setDoc(userRef, dataToSave, { merge: true });
     } catch (error) {
       console.error("Error saving data:", error);
       toast({

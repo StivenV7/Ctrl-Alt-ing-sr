@@ -6,7 +6,10 @@ import {
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { INITIAL_HABITS } from '@/lib/constants';
+
 
 interface AuthContextType {
   user: User | null;
@@ -26,12 +29,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkAndCreateUserDocument = async (user: User) => {
+    const userRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(userRef);
+
+    let userTheme = 'light';
+    if (docSnap.exists()) {
+      userTheme = docSnap.data().theme || 'light';
+    } else {
+      // Document doesn't exist, so this is a new or returning user without a doc.
+      // Let's create one.
+      await setDoc(userRef, {
+        uid: user.uid,
+        displayName: user.displayName || 'Usuario',
+        email: user.email,
+        theme: 'light', // Default theme
+        xp: 0,
+        goals: 'Mejorar mi constancia y bienestar general.',
+        habits: INITIAL_HABITS.map(({icon, ...rest}) => rest),
+      });
+    }
+    setTheme(userTheme as 'light' | 'blue' | 'pink');
+  };
+
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      // On auth state change, check localStorage for theme
-      const storedTheme = localStorage.getItem('habitica-theme') || 'light';
-      document.documentElement.setAttribute('data-theme', storedTheme);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        await checkAndCreateUserDocument(user);
+      } else {
+        setUser(null);
+        // On signout, reset to default theme
+        setTheme('light');
+      }
       setLoading(false);
     });
 
@@ -45,8 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await firebaseSignOut(auth);
-    // On signout, reset to default theme
-    setTheme('light');
+    // State change will be handled by onAuthStateChanged listener
   };
 
   return (
