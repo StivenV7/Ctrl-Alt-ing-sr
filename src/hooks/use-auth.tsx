@@ -8,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, collection, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -27,6 +27,33 @@ const AuthContext = createContext<AuthContextType>({
   userDoc: null,
 });
 
+const defaultCategories = [
+    { name: 'Lectura y Crecimiento', description: 'Un espacio para discutir libros, artículos y podcasts que nos ayuden a crecer.' },
+    { name: 'Fitness y Salud', description: 'Comparte tus rutinas de ejercicio, recetas saludables y consejos de bienestar.' },
+    { name: 'Productividad y Enfoque', description: 'Para los que buscan mejorar su gestión del tiempo y concentración.' },
+    { name: 'Meditación y Mindfulness', description: 'Encuentra calma y comparte tus prácticas de meditación y atención plena.' },
+    { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
+];
+
+// This function will run only once to seed the database with default categories.
+const seedDefaultCategories = async (adminUserId: string) => {
+    const categoriesRef = collection(db, 'forum_categories');
+    const q = await getDocs(categoriesRef);
+    if (q.empty) { // Only seed if the collection is empty
+        const batch = writeBatch(db);
+        defaultCategories.forEach(category => {
+            const docRef = doc(categoriesRef);
+            batch.set(docRef, { 
+                ...category,
+                createdBy: adminUserId,
+                createdAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
+        console.log("Default forum categories seeded.");
+    }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userDoc, setUserDoc] = useState<DocumentSnapshot<DocumentData> | null>(null);
@@ -43,6 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserDoc(docSnap);
     } else {
        console.log("Creating new user document in use-auth");
+       // This is a new user, so let's also check if we need to seed categories
+       await seedDefaultCategories(currentUser.uid);
        await setDoc(userRef, {
         uid: currentUser.uid,
         displayName: currentUser.displayName || 'Usuario',
