@@ -5,12 +5,12 @@ import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
 import type { Habit, FirestoreHabit } from '@/lib/types';
 import { RANKS } from '@/lib/constants';
-import { getHabitInsights, type HabitInsightsOutput } from '@/ai/flows/habit-insights';
+import { generateHabitPlan, type GenerateHabitPlanOutput } from '@/ai/flows/habit-insights';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { BookOpen, Dumbbell, HeartPulse, Trash2 } from 'lucide-react';
+import { BookOpen, Dumbbell, HeartPulse, Trash2, Plus } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,7 +20,7 @@ import { Flame, PlusCircle, Sparkles, TrendingUp, LogOut } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
 import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
 import { RankDisplay } from '@/components/RankDisplay';
-import { InsightsPanel } from '@/components/InsightsPanel';
+import { AIGenerateHabitPlanPanel } from '@/components/AIGenerateHabitPlanPanel';
 import { Logo } from '@/components/icons';
 
 
@@ -40,7 +40,7 @@ export default function Home() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [userXp, setUserXp] = useState(0);
   const [userGoals, setUserGoals] = useState('');
-  const [insights, setInsights] = useState<HabitInsightsOutput['insights']>([]);
+  const [suggestedHabits, setSuggestedHabits] = useState<GenerateHabitPlanOutput['habits']>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
@@ -181,21 +181,20 @@ export default function Home() {
     saveData({ goals });
   };
   
-  const handleGetInsights = async () => {
+  const handleGenerateHabitPlan = async () => {
     setLoadingInsights(true);
-    setInsights([]);
+    setSuggestedHabits([]);
     try {
-      const result = await getHabitInsights({
-        habits: habits,
+      const result = await generateHabitPlan({
         userGoals: userGoals || "Mejorar mi constancia y bienestar general.",
       });
-      setInsights(result.insights);
+      setSuggestedHabits(result.habits);
     } catch (error) {
       console.error("Error getting AI insights:", error);
       toast({
         variant: "destructive",
         title: "Error de IA",
-        description: "No se pudieron obtener las sugerencias. Inténtalo de nuevo.",
+        description: "No se pudo generar el plan. Inténtalo de nuevo.",
       });
     } finally {
       setLoadingInsights(false);
@@ -277,12 +276,13 @@ export default function Home() {
             </Card>
           </div>
           <div className="lg:col-span-1">
-            <InsightsPanel 
+            <AIGenerateHabitPlanPanel 
               userGoals={userGoals}
               setUserGoals={handleGoalsChange}
-              insights={insights}
+              suggestedHabits={suggestedHabits}
               loading={loadingInsights}
-              onGetInsights={handleGetInsights}
+              onGeneratePlan={handleGenerateHabitPlan}
+              onAddHabit={handleAddHabit}
             />
           </div>
         </div>
