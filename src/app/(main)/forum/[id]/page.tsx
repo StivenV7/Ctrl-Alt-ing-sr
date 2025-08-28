@@ -7,7 +7,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   addDoc,
   serverTimestamp,
@@ -92,7 +91,6 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     const q = query(
       collection(db, 'forum_messages'),
       where('categoryId', '==', categoryId),
-      orderBy('timestamp', 'asc') 
     );
 
     const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
@@ -100,6 +98,8 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
+      // Sort messages by timestamp client-side
+      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
       setMessages(msgs);
       setLoading(false);
     }, (error) => {
@@ -162,10 +162,8 @@ export default function ForumCategoryPage({ params }: { params: { id: string } }
     <Card className="shadow-lg h-full flex flex-col max-h-[calc(100vh-12rem)]">
       <CardHeader className="border-b">
         <div className="flex items-center gap-4">
-            <Link href="/forum" legacyBehavior>
-                <a className="p-2 rounded-full hover:bg-muted">
-                    <ArrowLeft className="h-5 w-5" />
-                </a>
+            <Link href="/forum" className="p-2 rounded-full hover:bg-muted">
+                <ArrowLeft className="h-5 w-5" />
             </Link>
             <div >
                 <CardTitle className="font-headline text-xl">{category?.name || 'Comunidad'}</CardTitle>
