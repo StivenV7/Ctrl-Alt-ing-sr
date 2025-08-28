@@ -8,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, collection, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, collection, getDocs, writeBatch, serverTimestamp, query } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -38,14 +38,17 @@ const defaultCategories = [
 // This function will run only once to seed the database with default categories.
 const seedDefaultCategories = async (adminUserId: string) => {
     const categoriesRef = collection(db, 'forum_categories');
-    const q = await getDocs(categoriesRef);
-    if (q.empty) { // Only seed if the collection is empty
+    const q = query(categoriesRef);
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) { // Only seed if the collection is empty
+        console.log("No default categories found. Seeding database...");
         const batch = writeBatch(db);
         defaultCategories.forEach(category => {
-            const docRef = doc(categoriesRef);
+            const docRef = doc(categoriesRef); // Create a new doc with a random ID
             batch.set(docRef, { 
                 ...category,
-                createdBy: adminUserId,
+                createdBy: adminUserId, // Assign the first user as creator
                 createdAt: serverTimestamp()
             });
         });
@@ -69,9 +72,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userTheme = docSnap.data().theme || 'light';
       setUserDoc(docSnap);
     } else {
-       console.log("Creating new user document in use-auth");
-       // This is a new user, so let's also check if we need to seed categories
+       // This is a new user, let's also check if we need to seed categories
+       // We pass the current user's ID as the creator of the default categories.
        await seedDefaultCategories(currentUser.uid);
+
+       // Now, create the new user's document
        await setDoc(userRef, {
         uid: currentUser.uid,
         displayName: currentUser.displayName || 'Usuario',

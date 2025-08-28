@@ -6,7 +6,7 @@ import { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'fire
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 48 48">
@@ -16,6 +16,34 @@ const GoogleIcon = () => (
     <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.021 35.596 44 30.023 44 24c0-1.341-.138-2.65-.389-3.917z" />
   </svg>
 );
+
+const defaultCategories = [
+    { name: 'Lectura y Crecimiento', description: 'Un espacio para discutir libros, artículos y podcasts que nos ayuden a crecer.' },
+    { name: 'Fitness y Salud', description: 'Comparte tus rutinas de ejercicio, recetas saludables y consejos de bienestar.' },
+    { name: 'Productividad y Enfoque', description: 'Para los que buscan mejorar su gestión del tiempo y concentración.' },
+    { name: 'Meditación y Mindfulness', description: 'Encuentra calma y comparte tus prácticas de meditación y atención plena.' },
+    { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
+];
+
+const seedDefaultCategories = async (adminUserId: string) => {
+    const categoriesRef = collection(db, 'forum_categories');
+    const q = query(categoriesRef);
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        console.log("No default categories found in Google Sign In. Seeding database...");
+        const batch = writeBatch(db);
+        defaultCategories.forEach(category => {
+            const docRef = doc(categoriesRef);
+            batch.set(docRef, { 
+                ...category,
+                createdBy: adminUserId,
+                createdAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
+    }
+}
 
 
 type GoogleSignInButtonProps = {
@@ -37,7 +65,9 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
       const docSnap = await getDoc(userRef);
 
       if (!docSnap.exists()) {
-        // If it's a new user, create their document in Firestore.
+        // If it's a new user, seed categories and create their document.
+        await seedDefaultCategories(user.uid);
+        
         await setDoc(userRef, {
           uid: user.uid,
           displayName: user.displayName,

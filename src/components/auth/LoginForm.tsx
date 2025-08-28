@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from "firebase/firestore"; 
+import { doc, setDoc, collection, query, getDocs, writeBatch, serverTimestamp } from "firebase/firestore"; 
 import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,34 @@ const formSchema = z.object({
 });
 
 let activeTab = 'signin';
+
+const defaultCategories = [
+    { name: 'Lectura y Crecimiento', description: 'Un espacio para discutir libros, artículos y podcasts que nos ayuden a crecer.' },
+    { name: 'Fitness y Salud', description: 'Comparte tus rutinas de ejercicio, recetas saludables y consejos de bienestar.' },
+    { name: 'Productividad y Enfoque', description: 'Para los que buscan mejorar su gestión del tiempo y concentración.' },
+    { name: 'Meditación y Mindfulness', description: 'Encuentra calma y comparte tus prácticas de meditación y atención plena.' },
+    { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
+];
+
+const seedDefaultCategories = async (adminUserId: string) => {
+    const categoriesRef = collection(db, 'forum_categories');
+    const q = query(categoriesRef);
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        console.log("No default categories found in Login Form. Seeding database...");
+        const batch = writeBatch(db);
+        defaultCategories.forEach(category => {
+            const docRef = doc(categoriesRef);
+            batch.set(docRef, { 
+                ...category,
+                createdBy: adminUserId,
+                createdAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
+    }
+}
 
 type LoginFormProps = {
   setError: (error: string | null) => void;
@@ -73,6 +101,9 @@ export function LoginForm({ setError }: LoginFormProps) {
         await updateProfile(user, {
             displayName: values.username,
         });
+
+        // Seed categories if it's the very first user
+        await seedDefaultCategories(user.uid);
 
         const userGender = values.gender || 'prefer-not-to-say';
         const theme = userGender === 'male' ? 'blue' : userGender === 'female' ? 'pink' : 'light';
