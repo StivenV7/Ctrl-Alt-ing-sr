@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, collection, query, getDocs, writeBatch, serverTimestamp } from "firebase/firestore"; 
+import { doc, setDoc, getDoc, collection, query, getCountFromServer, writeBatch, serverTimestamp } from "firebase/firestore"; 
 import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
@@ -95,6 +95,13 @@ export function LoginForm({ setError }: LoginFormProps) {
             setLoading(false);
             return;
         }
+        
+        // Determine role before creating user
+        const usersCollection = collection(db, 'users');
+        const snapshot = await getCountFromServer(usersCollection);
+        const isFirstUser = snapshot.data().count === 0;
+        const role = isFirstUser ? 'admin' : 'user';
+
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
 
@@ -117,8 +124,9 @@ export function LoginForm({ setError }: LoginFormProps) {
           gender: userGender,
           theme: theme,
           xp: 0,
-          habits: [], // Start with an empty list of habits
+          habits: [],
           followedCategoryIds: [],
+          role: role,
         });
       }
     } catch (error: any) {

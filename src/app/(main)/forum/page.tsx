@@ -24,7 +24,7 @@ import { AddCategoryDialog } from '@/components/forum/AddCategoryDialog';
 
 
 export default function ForumHomePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userDoc, loading: authLoading, isAdmin } = useAuth();
   const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [followedCategoryIds, setFollowedCategoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,17 +47,21 @@ export default function ForumHomePage() {
     });
 
     // Listen for user's followed categories
-    const userDocRef = doc(db, 'users', user.uid);
-    const userUnsub = onSnapshot(userDocRef, (doc) => {
-        setFollowedCategoryIds(doc.data()?.followedCategoryIds || []);
+    if (userDoc) {
+        const unsub = onSnapshot(userDoc.ref, (doc) => {
+            setFollowedCategoryIds(doc.data()?.followedCategoryIds || []);
+            setLoading(false);
+        });
+        return () => unsub();
+    } else {
         setLoading(false);
-    });
+    }
+
 
     return () => {
       categoriesUnsub();
-      userUnsub();
     };
-  }, [user, authLoading]);
+  }, [user, userDoc, authLoading]);
 
   const handleToggleFollow = async (categoryId: string) => {
     if (!user) return;
@@ -79,7 +83,7 @@ export default function ForumHomePage() {
   };
 
   const handleCreateCategory = async (name: string, description: string) => {
-     if (!user) return;
+     if (!user || !isAdmin) return;
      try {
         const newCategoryRef = await addDoc(collection(db, 'forum_categories'), {
             name,
@@ -95,6 +99,24 @@ export default function ForumHomePage() {
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear la comunidad.' });
      }
   }
+
+  const handleSuggestCategory = async (name: string, description: string) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'category_suggestions'), {
+        name,
+        description,
+        requestedBy: user.uid,
+        requestedByName: user.displayName,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: 'Sugerencia Enviada', description: 'Tu sugerencia de comunidad ha sido enviada para revisión.' });
+    } catch (error) {
+      console.error("Error suggesting category:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar tu sugerencia.' });
+    }
+  };
 
   if (authLoading || loading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -123,10 +145,13 @@ export default function ForumHomePage() {
             </div>
             <CardDescription>Únete a las conversaciones que te interesan.</CardDescription>
         </div>
-        <AddCategoryDialog onCreate={handleCreateCategory}>
+        <AddCategoryDialog 
+            onCreate={isAdmin ? handleCreateCategory : handleSuggestCategory}
+            isAdmin={isAdmin}
+        >
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Crear Comunidad
+                {isAdmin ? 'Crear Comunidad' : 'Sugerir Comunidad'}
             </Button>
         </AddCategoryDialog>
       </CardHeader>
@@ -157,7 +182,7 @@ export default function ForumHomePage() {
           ) : (
             <div className="text-center py-12 text-muted-foreground">
               <p>No hay comunidades todavía.</p>
-              <p>¡Crea la primera!</p>
+              <p>¡Crea o sugiere la primera!</p>
             </div>
           )}
         </div>
@@ -165,4 +190,3 @@ export default function ForumHomePage() {
     </Card>
   );
 }
-

@@ -85,3 +85,25 @@ export interface ForumMessage {
   userImage: string | null;
   categoryId: string;
 }
+
+export interface FirestoreUser {
+  uid: string;
+  displayName: string;
+  email: string | null;
+  theme: 'light' | 'blue' | 'pink';
+  xp: number;
+  habits: FirestoreHabit[];
+  followedCategoryIds: string[];
+  role: 'user' | 'admin';
+  gender?: string;
+}
+
+export interface CategorySuggestion {
+  id: string;
+  name: string;
+  description: string;
+  requestedBy: string; // userId
+  requestedByName: string; // userName for display
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp;
+}

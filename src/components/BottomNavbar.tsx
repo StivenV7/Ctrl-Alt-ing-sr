@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessagesSquare, LogOut, User as UserIcon } from 'lucide-react';
+import { Home, MessagesSquare, LogOut, User as UserIcon, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from './ui/button';
@@ -25,7 +26,7 @@ type BottomNavbarProps = {
 
 export function BottomNavbar({ rank, xp, displayName, onSignOut }: BottomNavbarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
@@ -63,6 +64,14 @@ export function BottomNavbar({ rank, xp, displayName, onSignOut }: BottomNavbarP
               </div>
               <Separator />
               <RankDisplay rank={rank} xp={xp} displayName={displayName} />
+              {isAdmin && (
+                 <Button variant="secondary" asChild className="w-full">
+                    <Link href="/admin">
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        Panel de Admin
+                    </Link>
+                 </Button>
+              )}
               <Button variant="outline" onClick={onSignOut} className="w-full">
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión

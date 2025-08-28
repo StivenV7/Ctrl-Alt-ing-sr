@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/icons';
 import { RankDisplay } from '@/components/RankDisplay';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldAlert } from 'lucide-react';
 import { RANKS } from '@/lib/constants';
 import { useMemo } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { ForumSidebar } from '@/components/forum/ForumSidebar';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 
 export default function MainLayout({
@@ -21,7 +22,7 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [userXp, setUserXp] = useState(0);
   const [userName, setUserName] = useState('');
   const pathname = usePathname();
@@ -29,6 +30,7 @@ export default function MainLayout({
   const userRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
 
   const isForumPage = pathname.startsWith('/forum');
+  const isSettingsPage = pathname.startsWith('/settings');
 
   const loadUserData = useCallback(async () => {
     if (!userRef) return;
@@ -63,6 +65,14 @@ export default function MainLayout({
              {user && (
                 <>
                     <RankDisplay rank={currentRank} xp={userXp} displayName={userName} />
+                    {isAdmin && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/admin">
+                          <ShieldAlert className="mr-2 h-4 w-4" />
+                          Admin
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline" size="icon" onClick={signOut} title="Cerrar sesión">
                         <LogOut className="h-4 w-4" />
                     </Button>
@@ -73,13 +83,13 @@ export default function MainLayout({
       </header>
 
       <div className="flex-1 container mx-auto p-4 md:p-8">
-        <div className={isForumPage ? "grid md:grid-cols-12 gap-8" : ""}>
-          {isForumPage && (
+        <div className={(isForumPage || isSettingsPage) ? "grid md:grid-cols-12 gap-8" : ""}>
+          {(isForumPage || isSettingsPage) && (
             <div className="hidden md:block md:col-span-3">
               <ForumSidebar />
             </div>
           )}
-          <main className={isForumPage ? "md:col-span-9" : "w-full"}>
+          <main className={(isForumPage || isSettingsPage) ? "md:col-span-9" : "w-full"}>
               {children}
           </main>
         </div>

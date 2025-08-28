@@ -2,11 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { doc, setDoc, getDoc, collection, query, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, getDocs, writeBatch, serverTimestamp, getCountFromServer } from 'firebase/firestore';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 48 48">
@@ -65,6 +65,11 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
       const docSnap = await getDoc(userRef);
 
       if (!docSnap.exists()) {
+        const usersCollection = collection(db, 'users');
+        const snapshot = await getCountFromServer(usersCollection);
+        const isFirstUser = snapshot.data().count === 0;
+        const role = isFirstUser ? 'admin' : 'user';
+
         // If it's a new user, seed categories and create their document.
         await seedDefaultCategories(user.uid);
         
@@ -76,6 +81,7 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
           xp: 0,
           habits: [],
           followedCategoryIds: [],
+          role: role,
         });
       }
       

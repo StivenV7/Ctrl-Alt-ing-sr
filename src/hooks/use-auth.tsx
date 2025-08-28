@@ -8,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, collection, getDocs, writeBatch, serverTimestamp, query } from 'firebase/firestore';
+import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, collection, getDocs, writeBatch, serverTimestamp, query,getCountFromServer } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -17,6 +17,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   setTheme: (theme: 'light' | 'blue' | 'pink') => void;
   userDoc: DocumentSnapshot<DocumentData> | null;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   setTheme: () => {},
   userDoc: null,
+  isAdmin: false,
 });
 
 const defaultCategories = [
@@ -61,34 +63,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userDoc, setUserDoc] = useState<DocumentSnapshot<DocumentData> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const checkAndCreateUserDocument = async (currentUser: User) => {
+  const checkAndCreateUserDocument = async (currentUser: User, isNewUser: boolean = false, userData: Partial<any> = {}) => {
     const userRef = doc(db, 'users', currentUser.uid);
-    const docSnap = await getDoc(userRef);
+    let docSnap = await getDoc(userRef);
 
     let userTheme: 'light' | 'blue' | 'pink' = 'light';
+    let userRole: 'user' | 'admin' = 'user';
     
-    if (docSnap.exists()) {
-      userTheme = docSnap.data().theme || 'light';
-      setUserDoc(docSnap);
-    } else {
+    // Check if this is the very first user to determine admin role
+    const usersCollection = collection(db, 'users');
+    const snapshot = await getCountFromServer(usersCollection);
+    const isFirstUser = snapshot.data().count === 0;
+
+    if (!docSnap.exists() && isNewUser) {
+       userRole = isFirstUser ? 'admin' : 'user';
+       console.log(`User role set to: ${userRole}`);
        // This is a new user, let's also check if we need to seed categories
-       // We pass the current user's ID as the creator of the default categories.
        await seedDefaultCategories(currentUser.uid);
 
-       // Now, create the new user's document
        await setDoc(userRef, {
         uid: currentUser.uid,
-        displayName: currentUser.displayName || 'Usuario',
-        email: currentUser.email,
-        theme: 'light', // Default theme
+        displayName: userData.displayName || currentUser.displayName || 'Usuario',
+        email: userData.email || currentUser.email,
+        theme: userData.theme || 'light',
         xp: 0,
         habits: [],
         followedCategoryIds: [],
+        role: userRole,
+        gender: userData.gender || 'prefer-not-to-say',
        });
-       const newDocSnap = await getDoc(userRef);
-       setUserDoc(newDocSnap);
+       docSnap = await getDoc(userRef);
     }
+    
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        userTheme = data.theme || 'light';
+        userRole = data.role || 'user';
+        setUserDoc(docSnap);
+    }
+    
+    setIsAdmin(userRole === 'admin');
     setTheme(userTheme);
   };
 
@@ -97,11 +113,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
+        // Here we can't be sure if it's a new user from onAuthStateChanged alone.
+        // The creation logic is better handled in the sign-up/sign-in flows.
         await checkAndCreateUserDocument(user);
         setUser(user);
       } else {
         setUser(null);
         setUserDoc(null);
+        setIsAdmin(false);
         setTheme('light');
       }
       setLoading(false);
@@ -122,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme }}>
+    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

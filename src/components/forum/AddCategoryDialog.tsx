@@ -27,9 +27,10 @@ const formSchema = z.object({
 type AddCategoryDialogProps = {
   children: React.ReactNode;
   onCreate: (name: string, description: string) => void;
+  isAdmin: boolean;
 };
 
-export function AddCategoryDialog({ children, onCreate }: AddCategoryDialogProps) {
+export function AddCategoryDialog({ children, onCreate, isAdmin }: AddCategoryDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,13 +46,19 @@ export function AddCategoryDialog({ children, onCreate }: AddCategoryDialogProps
     setIsOpen(false);
   };
 
+  const title = isAdmin ? 'Crear Nueva Comunidad' : 'Sugerir una Comunidad';
+  const description = isAdmin 
+    ? 'Inicia una nueva conversación sobre un tema que te apasione.'
+    : 'Tu sugerencia será revisada por un administrador antes de ser creada.';
+  const buttonText = isAdmin ? 'Crear Comunidad' : 'Enviar Sugerencia';
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Crear Nueva Comunidad</DialogTitle>
-          <DialogDescription>Inicia una nueva conversación sobre un tema que te apasione.</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -83,7 +90,7 @@ export function AddCategoryDialog({ children, onCreate }: AddCategoryDialogProps
             />
             <DialogFooter>
                <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-               <Button type="submit">Crear Comunidad</Button>
+               <Button type="submit">{buttonText}</Button>
             </DialogFooter>
           </form>
         </Form>
