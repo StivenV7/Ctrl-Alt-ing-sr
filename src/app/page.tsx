@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
-import type { Habit } from '@/lib/types';
+import type { Habit, FirestoreHabit } from '@/lib/types';
 import { INITIAL_HABITS, RANKS } from '@/lib/constants';
 import { getHabitInsights, type HabitInsightsOutput } from '@/ai/flows/habit-insights';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from '@/lib/firebase';
+import { BookOpen, Dumbbell, HeartPulse } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,36 +23,80 @@ import { InsightsPanel } from '@/components/InsightsPanel';
 import { Logo } from '@/components/icons';
 
 
+// Map stored habit IDs to Lucide icons
+const ICONS: { [key: string]: React.ElementType } = {
+  'habit-1': BookOpen,
+  'habit-2': Dumbbell,
+  'habit-3': HeartPulse,
+};
+
+const getIconForHabit = (habitId: string) => {
+  return ICONS[habitId] || TrendingUp;
+};
+
+
 export default function Home() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [userXp, setUserXp] = useState(0);
   const [userGoals, setUserGoals] = useState('');
   const [insights, setInsights] = useState<HabitInsightsOutput['insights']>([]);
   const [loadingInsights, setLoadingInsights] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  
+  const userRef = useMemo(() => user ? doc(db, "users", user.uid) : null, [user]);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    // On initial load, set habits and calculate initial XP
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    let initialXp = 0;
-    const loadedHabits = INITIAL_HABITS.map(habit => {
-      const completed = habit.lastCompletedDate === todayStr;
-      if (completed) {
-        initialXp += habit.streak; // Simplified initial XP calculation
+  const loadUserData = useCallback(async () => {
+    if (!userRef) return;
+    try {
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const loadedHabits = userData.habits.map((habit: FirestoreHabit) => ({
+          ...habit,
+          icon: getIconForHabit(habit.id),
+        }));
+        setHabits(loadedHabits);
+        setUserXp(userData.xp || 0);
+        setUserGoals(userData.goals || '');
+      } else {
+        console.log("No such document! Should have been created on signup.");
       }
-      return { ...habit, completed };
-    });
-    setHabits(loadedHabits);
-    setUserXp(initialXp);
-  }, []);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron cargar tus datos.",
+      });
+    } finally {
+      setIsDataLoaded(true);
+    }
+  }, [userRef, toast]);
+  
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user && !isDataLoaded) {
+      loadUserData();
+    }
+  }, [user, authLoading, router, isDataLoaded, loadUserData]);
+
+  const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
+    if (!userRef) return;
+    try {
+      await updateDoc(userRef, dataToSave);
+    } catch (error) {
+      console.error("Error saving data:", error);
+      toast({
+        variant: "destructive",
+        title: "Error de guardado",
+        description: "No se pudo guardar tu progreso. Revisa tu conexión.",
+      });
+    }
+  }, [userRef, toast]);
   
   const currentRank = useMemo(() => {
     return [...RANKS].reverse().find(rank => userXp >= rank.minXp) ?? RANKS[0];
@@ -60,14 +107,15 @@ export default function Home() {
     const todayStr = format(today, 'yyyy-MM-dd');
     const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
 
+    let newXp = userXp;
     let newStreakValue = 0;
+
     const updatedHabits = habits.map(habit => {
       if (habit.id === habitId) {
         if (habit.completed) {
           // Un-complete
           const newStreak = habit.streak > 0 ? habit.streak - 1 : 0;
-          newStreakValue = -1;
-          setUserXp(prev => Math.max(0, prev - 1));
+          newXp = Math.max(0, userXp - 1);
           return { ...habit, completed: false, streak: newStreak, lastCompletedDate: habit.streak > 1 ? yesterdayStr : null };
         } else {
           // Complete
@@ -76,7 +124,7 @@ export default function Home() {
             newStreak = habit.streak + 1;
           }
           newStreakValue = newStreak;
-          setUserXp(prev => prev + 1);
+          newXp = userXp + 1;
           return { ...habit, completed: true, streak: newStreak, lastCompletedDate: todayStr };
         }
       }
@@ -91,6 +139,8 @@ export default function Home() {
     }
     
     setHabits(updatedHabits);
+    setUserXp(newXp);
+    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest), xp: newXp });
   };
 
   const handleAddHabit = (name: string, category: string) => {
@@ -103,11 +153,18 @@ export default function Home() {
       streak: 0,
       lastCompletedDate: null,
     };
-    setHabits(prev => [...prev, newHabit]);
+    const updatedHabits = [...habits, newHabit];
+    setHabits(updatedHabits);
+    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest) });
     toast({
       title: "Hábito añadido",
       description: `Has añadido "${name}" a tu lista.`,
     })
+  };
+
+  const handleGoalsChange = (goals: string) => {
+    setUserGoals(goals);
+    saveData({ goals });
   };
   
   const handleGetInsights = async () => {
@@ -131,7 +188,7 @@ export default function Home() {
     }
   };
 
-  if (loading || !user) {
+  if (authLoading || !user || !isDataLoaded) {
     return <div className="flex h-screen items-center justify-center">Cargando...</div>;
   }
 
@@ -203,7 +260,7 @@ export default function Home() {
           <div className="lg:col-span-1">
             <InsightsPanel 
               userGoals={userGoals}
-              setUserGoals={setUserGoals}
+              setUserGoals={handleGoalsChange}
               insights={insights}
               loading={loadingInsights}
               onGetInsights={handleGetInsights}

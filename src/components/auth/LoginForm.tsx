@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc } from "firebase/firestore"; 
 import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { INITIAL_HABITS } from '@/lib/constants';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, introduce un correo válido.' }),
@@ -22,7 +23,7 @@ const formSchema = z.object({
   username: z.string().optional(),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']).optional(),
 }).refine(data => {
-  if (data.username && data.username.length < 3) {
+  if (activeTab === 'signup' && (!data.username || data.username.length < 3)) {
     return false;
   }
   return true;
@@ -31,14 +32,18 @@ const formSchema = z.object({
   path: ['username'],
 });
 
+let activeTab = 'signin';
+
 type LoginFormProps = {
   setError: (error: string | null) => void;
 };
 
 export function LoginForm({ setError }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('signin');
+  const [currentTab, setCurrentTab] = useState('signin');
   const { setTheme } = useAuth();
+  
+  activeTab = currentTab;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,10 +54,8 @@ export function LoginForm({ setError }: LoginFormProps) {
     setLoading(true);
     setError(null);
     try {
-      if (activeTab === 'signin') {
+      if (currentTab === 'signin') {
         await signInWithEmailAndPassword(auth, values.email, values.password);
-        // We can't know gender on sign-in, so we could default or retrieve it from a DB
-        // For now, we'll just let the AuthProvider handle the theme from localStorage
       } else {
         if (!values.username) {
             form.setError("username", { type: "manual", message: "El nombre de usuario es requerido."});
@@ -65,20 +68,27 @@ export function LoginForm({ setError }: LoginFormProps) {
             return;
         }
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        await updateProfile(userCredential.user, {
+        const user = userCredential.user;
+
+        await updateProfile(user, {
             displayName: values.username,
         });
 
-        // Set theme based on gender
-        if (values.gender === 'male') {
-          setTheme('blue');
-        } else if (values.gender === 'female') {
-          setTheme('pink');
-        } else {
-          setTheme('light');
-        }
+        const theme = values.gender === 'male' ? 'blue' : values.gender === 'female' ? 'pink' : 'light';
+        setTheme(theme);
+        
+        // Create user document in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          displayName: values.username,
+          email: values.email,
+          gender: values.gender,
+          theme: theme,
+          xp: 0,
+          goals: 'Mejorar mi constancia y bienestar general.',
+          habits: INITIAL_HABITS.map(({icon, ...rest}) => rest), // Don't store functions/React components
+        });
       }
-      // Redirect is handled by the parent page's useAuth hook
     } catch (error: any) {
       setError(getFirebaseErrorMessage(error.code));
     } finally {
@@ -103,7 +113,7 @@ export function LoginForm({ setError }: LoginFormProps) {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
         <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
