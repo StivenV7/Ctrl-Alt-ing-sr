@@ -93,7 +93,6 @@ export default function ForumCategoryPage() {
     const q = query(
       collection(db, 'forum_messages'),
       where('categoryId', '==', categoryId),
-      orderBy('timestamp', 'asc') // Re-add orderBy for chronological order
     );
 
     const unsubscribeMessages = onSnapshot(q, (querySnapshot) => {
@@ -101,8 +100,9 @@ export default function ForumCategoryPage() {
       querySnapshot.forEach((doc) => {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
-      // Firestore returns them ordered, no need for client-side sort
-      setMessages(msgs);
+      // Sort messages by timestamp client-side to avoid needing a composite index
+      const sortedMsgs = msgs.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+      setMessages(sortedMsgs);
       setLoading(false);
     }, (error) => {
         console.error("Error fetching forum messages:", error);
