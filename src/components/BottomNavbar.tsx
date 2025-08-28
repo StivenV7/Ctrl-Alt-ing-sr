@@ -7,7 +7,7 @@ import { Home, MessagesSquare, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './ui/sidebar';
 import { Sheet, SheetTrigger, SheetContent } from './ui/sheet';
-import { AppSidebar } from './Sidebar';
+import { SidebarNavContent } from './Sidebar';
 
 const navItems = [
   { href: '/', label: 'Inicio', icon: Home },
@@ -45,7 +45,7 @@ export function BottomNavbar() {
                 </div>
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
-                <AppSidebar />
+                <SidebarNavContent />
             </SheetContent>
         </Sheet>
       </div>
