@@ -31,10 +31,10 @@ Tú: "¡Perfecto! Un mes es una meta realista. El libro tiene unas 300 páginas.
 
 Historial de la conversación:
 {{#each history}}
-  {{#if (eq role 'user')}}
-    Usuario: {{{content}}}
+  {{#if (this.role == 'user')}}
+    Usuario: {{{this.content}}}
   {{else}}
-    Tú: {{{content}}}
+    Tú: {{{this.content}}}
   {{/if}}
 {{/each}}
 
