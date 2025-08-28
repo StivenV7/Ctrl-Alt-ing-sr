@@ -100,7 +100,12 @@ export default function ForumCategoryPage() {
         msgs.push({ id: doc.id, ...doc.data() } as ForumMessage);
       });
       // Sort messages by timestamp client-side to avoid needing a composite index
-      const sortedMsgs = msgs.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+      const sortedMsgs = msgs.sort((a, b) => {
+          if (a.timestamp && b.timestamp) {
+            return a.timestamp.toMillis() - b.timestamp.toMillis();
+          }
+          return 0; // Keep order if timestamps are not available yet
+      });
       setMessages(sortedMsgs);
       setLoading(false);
     }, (error) => {

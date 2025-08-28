@@ -3,22 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '@/components/ui/sidebar';
-import { Logo } from '@/components/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
 import { Home, LogOut, MessagesSquare, ShieldAlert } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Logo } from './icons';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
 
 const navItems = [
     { href: '/', label: 'Inicio', icon: Home },
@@ -37,36 +29,34 @@ export function SidebarNavContent() {
   }, [userXp]);
 
   return (
-    <>
-        <SidebarHeader>
-             <div className="flex items-center gap-2">
-                <Logo className="size-8 text-primary" />
-                <span className="text-xl font-bold text-primary">Habitica</span>
-             </div>
-        </SidebarHeader>
-        <SidebarContent>
-            <SidebarMenu>
-                {navItems.map((item) => (
-                     <SidebarMenuItem key={item.href}>
-                        <Link href={item.href} className="block w-full">
-                            <SidebarMenuButton isActive={pathname === item.href} tooltip={item.label}>
-                                <item.icon className="size-4" />
-                                <span>{item.label}</span>
-                            </SidebarMenuButton>
-                        </Link>
-                     </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
+    <div className="flex flex-col p-4">
+        <SheetHeader className="pb-4 border-b text-left">
+            <SheetTitle>
+                <div className="flex items-center gap-2">
+                    <Logo className="size-8 text-primary" />
+                    <span className="text-xl font-bold text-primary">Habitica</span>
+                </div>
+            </SheetTitle>
+        </SheetHeader>
+        <nav className="flex flex-col gap-2 py-4">
+            {navItems.map((item) => (
+                 <Link key={item.href} href={item.href}>
+                    <Button variant={pathname === item.href ? 'secondary' : 'ghost'} className="w-full justify-start">
+                        <item.icon className="size-4 mr-2" />
+                        <span>{item.label}</span>
+                    </Button>
+                 </Link>
+            ))}
+        </nav>
+        <div className="mt-auto flex flex-col gap-2 border-t pt-4">
             {user && (
-                <div className="flex flex-col gap-2">
+                <>
                     {isAdmin && (
                         <Link href="/admin">
-                            <SidebarMenuButton>
-                                <ShieldAlert className="size-4 text-destructive"/>
+                            <Button variant="ghost" className="w-full justify-start">
+                                <ShieldAlert className="size-4 mr-2 text-destructive"/>
                                 <span>Panel Admin</span>
-                            </SidebarMenuButton>
+                            </Button>
                         </Link>
                     )}
                     <div className="flex items-center gap-2 rounded-md p-2">
@@ -84,9 +74,9 @@ export function SidebarNavContent() {
                         <LogOut className="mr-2 h-4 w-4" />
                         Cerrar Sesión
                     </Button>
-                </div>
+                </>
             )}
-        </SidebarFooter>
-    </>
+        </div>
+    </div>
   );
 }

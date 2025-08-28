@@ -199,8 +199,8 @@ export default function Home() {
   }
 
   return (
-    <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+    <div className="grid gap-8 lg:grid-cols-3">
+      <div className="lg:col-span-2 space-y-8">
         <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-headline">Mis Retos</CardTitle>
@@ -229,14 +229,14 @@ export default function Home() {
             </div>
             </CardContent>
         </Card>
-        </div>
-        <div className="lg:col-span-1">
+      </div>
+      <div className="lg:col-span-1">
         <AIChatPanel 
             chatHistory={chatHistory}
             onSubmit={handleChatSubmit}
             onAddHabit={handleAddHabit}
         />
-        </div>
+      </div>
     </div>
   );
 }
