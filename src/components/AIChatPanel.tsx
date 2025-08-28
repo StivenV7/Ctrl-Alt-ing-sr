@@ -11,7 +11,7 @@ import { ChatMessage, ChatOutput } from '@/lib/types';
 type AIChatPanelProps = {
   chatHistory: ChatMessage[];
   onSubmit: (message: string) => Promise<ChatOutput>;
-  onAddHabit: (name: string, category: string) => void;
+  onAddHabit: (name: string, category: string, description: string, duration: number) => void;
 };
 
 export function AIChatPanel({
@@ -76,20 +76,21 @@ export function AIChatPanel({
                       : 'bg-muted'
                   }`}
                 >
-                  <p>{msg.content}</p>
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
                   {msg.suggestions && msg.suggestions.length > 0 && (
                      <div className="mt-3 space-y-2 border-t pt-2">
-                        <h5 className="text-xs font-semibold">Sugerencias:</h5>
+                        <h5 className="text-xs font-semibold">Sugerencias de Retos:</h5>
                         {msg.suggestions.map((habit, sIndex) => (
                             <div key={sIndex} className="flex items-center justify-between gap-2 p-2 rounded-md bg-background/50">
                                 <div className='flex items-start gap-2'>
                                     <Lightbulb className="h-4 w-4 mt-0.5 shrink-0"/>
                                     <div>
                                         <p className="font-semibold">{habit.name}</p>
-                                        <p className="text-xs">{habit.category}</p>
+                                        <p className="text-xs text-muted-foreground">{habit.category} - {habit.duration} días</p>
+                                        <p className="text-xs mt-1">{habit.description}</p>
                                     </div>
                                 </div>
-                                <Button size="sm" variant="outline" onClick={() => onAddHabit(habit.name, habit.category)}>
+                                <Button size="sm" variant="outline" onClick={() => onAddHabit(habit.name, habit.category, habit.description, habit.duration)}>
                                     <Plus className="h-3 w-3 mr-1"/>
                                     Añadir
                                 </Button>

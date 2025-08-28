@@ -1,18 +1,30 @@
 import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
 
+// A daily entry for a habit challenge
+export const HabitEntrySchema = z.object({
+  date: z.string().describe('The date for the entry in YYYY-MM-DD format.'),
+  completed: z.boolean().describe('Whether the habit was completed on this date.'),
+  journal: z.string().optional().describe('A user-written journal entry for the day.'),
+});
+export type HabitEntry = z.infer<typeof HabitEntrySchema>;
+
 export type Habit = {
   id: string;
   name: string;
   category: string;
+  description: string; // Detailed description of the habit/challenge
   icon: LucideIcon; // This is for client-side display only
-  completed: boolean;
-  streak: number;
-  lastCompletedDate: string | null;
+  duration: number; // Duration of the challenge in days
+  entries: HabitEntry[]; // Record of daily progress
+  // DEPRECATED properties, will be calculated from entries
+  completed?: boolean; 
+  streak?: number;
+  lastCompletedDate?: string | null;
 };
 
 // This is the shape of the habit data stored in Firestore
-export type FirestoreHabit = Omit<Habit, 'icon'>;
+export type FirestoreHabit = Omit<Habit, 'icon' | 'completed' | 'streak' | 'lastCompletedDate'>;
 
 export type Rank = {
   name: string;
@@ -20,10 +32,12 @@ export type Rank = {
   icon: LucideIcon;
 };
 
-// Schema for AI chat suggestions
+// Schema for AI chat suggestions for detailed habits/challenges
 export const HabitSuggestionSchema = z.object({
-    name: z.string().describe('The name of the suggested habit.'),
+    name: z.string().describe('The name of the suggested habit challenge.'),
     category: z.string().describe('The category for the habit (e.g., Health, Productivity, Creativity).'),
+    description: z.string().describe("A detailed description of the habit and why it's beneficial."),
+    duration: z.number().describe('The suggested duration for the challenge in days (e.g., 7, 21, 30).'),
 });
 
 // Schema for a single chat message
@@ -45,6 +59,6 @@ export type ChatInput = z.infer<typeof ChatInputSchema>;
 // Output schema for the chat flow
 export const ChatOutputSchema = z.object({
   answer: z.string().describe('The AI coach\'s response.'),
-  suggestions: z.array(HabitSuggestionSchema).optional().describe('A list of actionable habits suggested by the AI.'),
+  suggestions: z.array(HabitSuggestionSchema).optional().describe('A list of actionable habit challenges suggested by the AI.'),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;

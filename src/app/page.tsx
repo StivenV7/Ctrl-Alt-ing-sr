@@ -1,27 +1,25 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { format, subDays } from 'date-fns';
 import { useToast } from "@/hooks/use-toast"
-import type { Habit, FirestoreHabit, ChatMessage, ChatOutput } from '@/lib/types';
+import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from '@/lib/types';
 import { RANKS } from '@/lib/constants';
 import { chat } from '@/ai/flows/chat-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { BookOpen, Dumbbell, HeartPulse, Trash2, Plus } from 'lucide-react';
+import { addDays, format, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Flame, PlusCircle, Sparkles, TrendingUp, LogOut } from 'lucide-react';
+import { Flame, PlusCircle, Sparkles, LogOut, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
-import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
 import { RankDisplay } from '@/components/RankDisplay';
 import { AIChatPanel } from '@/components/AIChatPanel';
 import { Logo } from '@/components/icons';
+import { HabitDetails } from '@/components/HabitDetails';
+import { calculateStreak } from '@/lib/utils';
 
 
 // Map stored habit IDs to Lucide icons
@@ -59,8 +57,6 @@ export default function Home() {
         })) || [];
         setHabits(loadedHabits);
         setUserXp(userData.xp || 0);
-        // Do not load chat history, it's ephemeral
-        // setChatHistory(userData.chatHistory || []); 
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -85,6 +81,7 @@ export default function Home() {
   const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
     if (!userRef) return;
     try {
+      // Use setDoc with merge: true to both create and update documents safely.
       await setDoc(userRef, dataToSave, { merge: true });
     } catch (error) {
       console.error("Error saving data:", error);
@@ -100,60 +97,57 @@ export default function Home() {
     return [...RANKS].reverse().find(rank => userXp >= rank.minXp) ?? RANKS[0];
   }, [userXp]);
 
-  const handleCompleteHabit = (habitId: string) => {
-    const today = new Date();
-    const todayStr = format(today, 'yyyy-MM-dd');
-    const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
-
+  const handleHabitUpdate = (habitId: string, updatedEntries: HabitEntry[]) => {
     let newXp = userXp;
-    let newStreakValue = 0;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-    const updatedHabits = habits.map(habit => {
-      if (habit.id === habitId) {
-        if (habit.completed) {
-          // Un-complete
-          const newStreak = habit.streak > 0 ? habit.streak - 1 : 0;
-          newXp = Math.max(0, userXp - 1);
-          return { ...habit, completed: false, streak: newStreak, lastCompletedDate: habit.streak > 1 ? yesterdayStr : null };
-        } else {
-          // Complete
-          let newStreak = 1;
-          if (habit.lastCompletedDate === yesterdayStr) {
-            newStreak = habit.streak + 1;
-          }
-          newStreakValue = newStreak;
-          newXp = userXp + 1;
-          return { ...habit, completed: true, streak: newStreak, lastCompletedDate: todayStr };
+    const updatedHabits = habits.map(h => {
+        if (h.id === habitId) {
+            const oldCompletedCount = h.entries.filter(e => e.completed).length;
+            const newCompletedCount = updatedEntries.filter(e => e.completed).length;
+            
+            newXp += (newCompletedCount - oldCompletedCount);
+
+            return { ...h, entries: updatedEntries };
         }
-      }
-      return habit;
+        return h;
     });
 
-    if (newStreakValue > 1) {
-      toast({
-        title: `🔥 Racha de ${newStreakValue} días!`,
-        description: "Sigue así!",
-      })
-    }
+    const updatedStreak = calculateStreak(updatedEntries);
     
+    if (updatedStreak.count > 1 && updatedStreak.justIncreased) {
+       toast({
+        title: `🔥 Racha de ${updatedStreak.count} días!`,
+        description: "Sigue así!",
+      });
+    }
+
     setHabits(updatedHabits);
     setUserXp(newXp);
-    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest), xp: newXp });
+
+    const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
+    saveData({ habits: habitsToSave, xp: newXp });
   };
 
-  const handleAddHabit = (name: string, category: string) => {
+  const handleAddHabit = (name: string, category: string, description: string, duration: number) => {
+    const startDate = startOfDay(new Date());
     const newHabit: Habit = {
       id: `habit-${Date.now()}`,
       name,
       category,
+      description,
+      duration,
       icon: TrendingUp,
-      completed: false,
-      streak: 0,
-      lastCompletedDate: null,
+      entries: Array.from({ length: duration }, (_, i) => ({
+        date: format(addDays(startDate, i), 'yyyy-MM-dd'),
+        completed: false,
+        journal: '',
+      })),
     };
     const updatedHabits = [...habits, newHabit];
     setHabits(updatedHabits);
-    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest) });
+    const { icon, ...habitToSave } = newHabit;
+    saveData({ habits: [...habits.map(({icon, ...rest}) => rest), habitToSave] });
     toast({
       title: "Hábito añadido",
       description: `Has añadido "${name}" a tu lista.`,
@@ -182,8 +176,7 @@ export default function Home() {
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.answer, suggestions: result.suggestions };
       const finalHistory = [...newHistory, assistantMessage];
       setChatHistory(finalHistory);
-      // We don't save the chat history anymore. It's ephemeral.
-      // saveData({ chatHistory: finalHistory });
+      // Chat history is ephemeral and not saved to Firestore
       
       return result;
     } catch (error) {
@@ -226,47 +219,26 @@ export default function Home() {
           <div className="lg:col-span-2">
             <Card className="shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-headline">Mis Hábitos</CardTitle>
+                <CardTitle className="font-headline">Mis Retos</CardTitle>
                 <AddHabitDialog onAddHabit={handleAddHabit}>
                   <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Hábito
+                    Añadir Reto
                   </Button>
                 </AddHabitDialog>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {habits.length > 0 ? habits.map(habit => (
-                    <Card key={habit.id} className={`transition-all duration-300 ${habit.completed ? 'bg-accent/50 border-primary/50' : ''}`}>
-                      <CardContent className="p-4 flex items-center gap-4">
-                        <Checkbox 
-                          id={`habit-${habit.id}`}
-                          checked={habit.completed}
-                          onCheckedChange={() => handleCompleteHabit(habit.id)}
-                          className="h-6 w-6"
-                          aria-label={`Marcar ${habit.name} como completado`}
-                        />
-                         <div className="flex-grow grid gap-1">
-                          <label htmlFor={`habit-${habit.id}`} className="font-semibold cursor-pointer">{habit.name}</label>
-                          <p className="text-sm text-muted-foreground">{habit.category}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-amber-500 font-bold">
-                          <Flame className="h-5 w-5"/>
-                          <span>{habit.streak}</span>
-                        </div>
-                        <Badge variant={habit.completed ? 'default' : 'secondary'} className={`transition-colors ${habit.completed ? 'bg-primary text-primary-foreground' : ''}`}>
-                          {habit.completed ? 'Completado' : 'Pendiente'}
-                        </Badge>
-                        <DeleteHabitDialog habitName={habit.name} onDelete={() => handleDeleteHabit(habit.id)}>
-                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DeleteHabitDialog>
-                      </CardContent>
-                    </Card>
+                    <HabitDetails 
+                        key={habit.id} 
+                        habit={habit} 
+                        onUpdate={handleHabitUpdate}
+                        onDelete={handleDeleteHabit}
+                    />
                   )) : (
                     <div className="text-center py-12 text-muted-foreground">
-                      <p>No tienes hábitos todavía.</p>
+                      <p>No tienes retos todavía.</p>
                       <p>¡Añade uno para empezar!</p>
                     </div>
                   )}
