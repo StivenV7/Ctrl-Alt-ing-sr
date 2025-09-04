@@ -10,10 +10,10 @@ import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from './icons';
-import { SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
+import { SheetHeader, SheetTitle } from './ui/sheet';
 
 const navItems = [
-    { href: '/', label: 'Inicio', icon: Home },
+    { href: '/home', label: 'Inicio', icon: Home },
     { href: '/fanpage', label: 'Fan Page', icon: Heart },
     { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,6 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Logo } from '@/components/icons';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -16,7 +20,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/');
+      router.push('/home');
     }
   }, [user, loading, router]);
 
@@ -29,7 +33,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/50 p-4">
+        <div className='absolute top-4 left-4'>
+            <Button asChild variant="ghost">
+                <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Volver al Inicio</Link>
+            </Button>
+        </div>
       <Card className="w-full max-w-sm shadow-lg">
         <CardHeader className="items-center text-center">
           <Logo className="h-12 w-12 text-primary" />

@@ -15,7 +15,7 @@ import { Logo } from './icons';
 import { SidebarNavContent } from './Sidebar';
 
 const navItems = [
-  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/home', label: 'Inicio', icon: Home },
   { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];
 

@@ -33,7 +33,7 @@ const getIconForHabit = (habitId: string) => {
 };
 
 
-export default function Home() {
+export default function HomePage() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [userXp, setUserXp] = useState(0);
