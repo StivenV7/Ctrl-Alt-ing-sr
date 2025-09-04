@@ -1,3 +1,4 @@
+
 # Habitica - Tu Coach de Hábitos Gamificado
 
 Habitica es una aplicación web diseñada para ayudarte a construir y mantener hábitos positivos de una manera divertida y motivadora. La aplicación utiliza la gamificación, asignando puntos de experiencia (XP) y rangos a medida que completas tus retos diarios, y cuenta con un coach de IA personalizado para guiarte en tu viaje.
@@ -34,6 +35,7 @@ src
 │   └── layout.tsx        # Layout raíz de la aplicación.
 ├── components
 │   ├── auth/             # Componentes para autenticación (formularios, botones).
+│   ├── landing/          # Componentes de la página de inicio/Fan Page.
 │   ├── ui/               # Componentes base de ShadCN/UI (Button, Card, etc.).
 │   └── *.tsx             # Componentes específicos de la aplicación (AIChatPanel, HabitDetails, etc.).
 ├── hooks
@@ -77,5 +79,25 @@ src
 -   **Temas por Género**: Al registrarse, los usuarios pueden seleccionar su sexo, lo que asigna un tema de color (azul para masculino, rosa para femenino).
 -   **Tema por Defecto**: Existe un tema de luz neutral para quienes no especifican o inician sesión con Google.
 -   **Persistencia**: El tema se guarda en la configuración del usuario en Firestore.
+
+## 👥 División de la Fan Page (Página de Aterrizaje)
+
+Para facilitar la presentación y el desarrollo, la página de aterrizaje se ha dividido en los siguientes componentes modulares, cada uno asignado a un miembro del equipo:
+
+-   **Responsable: Harry Gongora**
+    -   **Componente:** `src/components/landing/HeroSection.tsx`
+    -   **Descripción:** Es la sección principal de bienvenida. Contiene el título, el eslogan y el botón principal de llamada a la acción.
+
+-   **Responsable: Josué Sinisterra**
+    -   **Componente:** `src/components/landing/FeaturesSection.tsx`
+    -   **Descripción:** Muestra las características clave de la aplicación (Retos, Gamificación, Coach IA) en tarjetas informativas.
+
+-   **Responsable: Oscar Valle**
+    -   **Componente:** `src/components/landing/HowItWorksSection.tsx`
+    -   **Descripción:** Explica el funcionamiento de la aplicación en tres sencillos pasos, facilitando la comprensión del usuario.
+
+-   **Responsable: Kevin Quintero**
+    -   **Componentes:** `src/components/landing/CommunitySection.tsx` y `src/components/landing/CtaSection.tsx`
+    -   **Descripción:** Se encarga de la sección que promueve las comunidades del foro y de la llamada a la acción final para animar al registro.
 
 Con esto, tienes una visión completa de la arquitectura y funcionalidades del proyecto Habitica.
