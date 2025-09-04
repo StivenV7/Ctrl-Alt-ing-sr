@@ -30,7 +30,7 @@ export function FeaturesSection() {
           <h2 className="text-3xl font-bold">¿Por qué Habitica?</h2>
           <p className="mt-2 text-muted-foreground">
             Fusionamos la ciencia de la formación de hábitos con la diversión de un juego. Aquí tienes todo lo que necesitas para construir la mejor versión de ti mismo.
-            <br />
+              <br />
             <em className="text-sm text-primary">Att: Josué Sinisterra</em>
           </p>
         </div>
