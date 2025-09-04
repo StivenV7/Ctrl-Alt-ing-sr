@@ -8,28 +8,33 @@ import { Moon, Sun } from 'lucide-react';
 type Theme = 'light' | 'dark';
 
 export function ThemeToggleButton() {
-  const [theme, setTheme] = useState<Theme>('light');
+  // Start with a null theme to avoid hydration mismatch
+  const [theme, setTheme] = useState<Theme | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // We need to check for window to ensure this runs only on the client
-    if (typeof window !== 'undefined') {
-        const storedTheme = localStorage.getItem('theme') as Theme | null;
-        const initialTheme = storedTheme || 'light';
-        setTheme(initialTheme);
-        document.documentElement.setAttribute('data-theme', initialTheme);
-    }
+    setMounted(true);
+    // On mount, read the theme from localStorage
+    const storedTheme = localStorage.getItem('theme') as Theme | null;
+    const initialTheme = storedTheme || 'light';
+    setTheme(initialTheme);
   }, []);
+  
+  useEffect(() => {
+    // When theme state changes, update localStorage and the document attribute
+    if (theme) {
+      localStorage.setItem('theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
-  // Avoid rendering on the server to prevent hydration mismatch
-  if (typeof window === 'undefined') {
-    return null;
+  // Until the component is mounted, don't render anything to avoid mismatch
+  if (!mounted || !theme) {
+    return <div className="h-10 w-10" />; // Render a placeholder to maintain layout
   }
 
   return (
