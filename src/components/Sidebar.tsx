@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut, MessagesSquare, ShieldAlert, Heart } from 'lucide-react';
+import { Home, LogOut, MessagesSquare, ShieldAlert } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,7 +14,6 @@ import { SheetHeader, SheetTitle } from './ui/sheet';
 
 const navItems = [
     { href: '/home', label: 'Inicio', icon: Home },
-    { href: '/fanpage', label: 'Fan Page', icon: Heart },
     { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];
 

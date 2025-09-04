@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Star, Users, MessageSquare, Heart } from 'lucide-react';
+import { CheckCircle, Star, Users, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 Habitica es también un lugar para conectar e inspirar.
               </p>
             </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-2">
+            <div className="mt-12 grid gap-8 md:grid-cols-1 md:max-w-2xl mx-auto">
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
@@ -147,17 +147,6 @@ export default function LandingPage() {
                   <CardContent>
                     <p className="text-muted-foreground">Únete a nuestros foros temáticos para discutir sobre fitness, lectura, finanzas y más. Comparte consejos, haz preguntas y encuentra compañeros de viaje.</p>
                   </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <Heart className="h-8 w-8 text-primary" />
-                            <CardTitle>Fan Page Creativa</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">¿Tienes una historia de éxito, una idea o una creación que te gustaría compartir? Publica en nuestra Fan Page y inspira a toda la comunidad.</p>
-                    </CardContent>
                 </Card>
             </div>
           </div>

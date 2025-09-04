@@ -107,15 +107,3 @@ export interface CategorySuggestion {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Timestamp;
 }
-
-
-// FAN PAGE TYPES
-export interface FanPost {
-    id: string;
-    title: string;
-    content: string;
-    authorId: string;
-    authorName: string;
-    authorImage: string | null;
-    createdAt: Timestamp;
-}
