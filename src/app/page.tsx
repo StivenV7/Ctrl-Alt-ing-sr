@@ -44,6 +44,8 @@ export default function LandingPage() {
                 </h1>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
                     Habitica es tu compañero gamificado para construir hábitos duraderos. Gana XP, sube de nivel y alcanza tus metas con la ayuda de un coach de IA personalizado.
+                    <br />
+                    <em className="text-sm">Atte: Harry Gongora</em>
                 </p>
                 <div className="mt-8 flex justify-center gap-4">
                     <Button asChild size="lg">
@@ -60,6 +62,8 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold">¿Por qué Habitica?</h2>
               <p className="mt-2 text-muted-foreground">
                 Todo lo que necesitas para construir la mejor versión de ti mismo.
+                <br />
+                <em className="text-sm">Att: Josué Sinisterra</em>
               </p>
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-3">
@@ -88,6 +92,8 @@ export default function LandingPage() {
                         <h2 className="text-3xl font-bold">Simple, Intuitivo y Poderoso</h2>
                         <p className="mt-4 text-muted-foreground">
                             Comienza tu viaje de superación en tres sencillos pasos. Nuestra plataforma está diseñada para que te concentres en lo que realmente importa: tu progreso.
+                             <br />
+                            <em className="text-sm">Att: Oscar Valle</em>
                         </p>
                         <ul className="mt-6 space-y-4">
                             <li className="flex items-start">
@@ -134,6 +140,8 @@ export default function LandingPage() {
               <h2 className="text-3xl font-bold">Más Allá de los Hábitos</h2>
               <p className="mt-2 text-muted-foreground">
                 Habitica es también un lugar para conectar e inspirar.
+                 <br />
+                <em className="text-sm">Att: Kevin Quintero</em>
               </p>
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-1 md:max-w-2xl mx-auto">
