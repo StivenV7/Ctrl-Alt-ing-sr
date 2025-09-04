@@ -13,7 +13,7 @@ export function HeroSection() {
           Transforma tu Vida, <span className="text-primary">un Hábito a la Vez.</span>
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-          Habitica es tu compañero gamificado para construir hábitos duraderos. Gana XP, sube de nivel y alcanza tus metas con la ayuda de un coach de IA personalizado.
+          Habitica es tu compañero gamificado para construir hábitos duraderos. Gana XP, sube de nivel y alcanza tus metas con la ayuda de un coach de IA personalizado. Deja de procrastinar y empieza a construir la vida que deseas, un reto a la vez.
           <br />
           <em className="text-sm text-primary">Atte: Harry Gongora</em>
         </p>
