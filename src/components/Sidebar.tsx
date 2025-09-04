@@ -4,19 +4,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut, MessagesSquare, ShieldAlert } from 'lucide-react';
+import { Home, LogOut, MessagesSquare, ShieldAlert, Heart } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from './icons';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
+import { SheetContent, SheetHeader, SheetTitle } from './ui/sheet';
 
 const navItems = [
     { href: '/', label: 'Inicio', icon: Home },
+    { href: '/fanpage', label: 'Fan Page', icon: Heart },
     { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];
-
 
 export function SidebarNavContent() {
   const pathname = usePathname();
@@ -29,8 +29,8 @@ export function SidebarNavContent() {
   }, [userXp]);
 
   return (
-    <div className="flex flex-col p-4">
-        <SheetHeader className="pb-4 border-b text-left">
+    <div className="flex h-full flex-col">
+        <SheetHeader className="p-4 pb-4 border-b text-left">
             <SheetTitle>
                 <div className="flex items-center gap-2">
                     <Logo className="size-8 text-primary" />
@@ -38,7 +38,7 @@ export function SidebarNavContent() {
                 </div>
             </SheetTitle>
         </SheetHeader>
-        <nav className="flex flex-col gap-2 py-4">
+        <nav className="flex flex-col gap-2 p-4">
             {navItems.map((item) => (
                  <Link key={item.href} href={item.href}>
                     <Button variant={pathname === item.href ? 'secondary' : 'ghost'} className="w-full justify-start">
@@ -48,7 +48,7 @@ export function SidebarNavContent() {
                  </Link>
             ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-2 border-t pt-4">
+        <div className="mt-auto flex flex-col gap-2 border-t p-4">
             {user && (
                 <>
                     {isAdmin && (

@@ -25,14 +25,14 @@ const defaultCategories = [
     { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
 ];
 
-const seedDefaultCategories = async (adminUserId: string) => {
-    const categoriesRef = collection(db, 'forum_categories');
-    const q = query(categoriesRef);
-    const snapshot = await getDocs(q);
+const seedDefaultData = async (adminUserId: string) => {
+    const batch = writeBatch(db);
 
-    if (snapshot.empty) {
-        console.log("No default categories found in Google Sign In. Seeding database...");
-        const batch = writeBatch(db);
+    // Seed forum categories
+    const categoriesRef = collection(db, 'forum_categories');
+    const categoriesSnapshot = await getDocs(query(categoriesRef));
+    if (categoriesSnapshot.empty) {
+        console.log("Seeding default forum categories...");
         defaultCategories.forEach(category => {
             const docRef = doc(categoriesRef);
             batch.set(docRef, { 
@@ -41,8 +41,25 @@ const seedDefaultCategories = async (adminUserId: string) => {
                 createdAt: serverTimestamp()
             });
         });
-        await batch.commit();
     }
+
+    // Seed initial fan post
+    const postsRef = collection(db, 'fan_posts');
+    const postsSnapshot = await getDocs(query(postsRef));
+    if (postsSnapshot.empty) {
+        console.log("Seeding initial fan post...");
+        const postDocRef = doc(postsRef);
+        batch.set(postDocRef, {
+            title: '¡Bienvenidos a la comunidad Habitica!',
+            content: 'Este es el primer post en nuestra nueva Fan Page. Un espacio para compartir, inspirar y crecer juntos. ¡Estamos muy contentos de tenerte aquí!',
+            authorId: adminUserId,
+            authorName: 'Admin',
+            authorImage: null,
+            createdAt: serverTimestamp()
+        });
+    }
+    
+    await batch.commit();
 }
 
 
@@ -70,8 +87,10 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
         const isFirstUser = snapshot.data().count === 0;
         const role = isFirstUser ? 'admin' : 'user';
 
-        // If it's a new user, seed categories and create their document.
-        await seedDefaultCategories(user.uid);
+        // If it's a new user, seed default data
+        if (isFirstUser) {
+           await seedDefaultData(user.uid);
+        }
         
         await setDoc(userRef, {
           uid: user.uid,

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessagesSquare, User, LogOut, ShieldAlert } from 'lucide-react';
+import { Home, MessagesSquare, User, LogOut, ShieldAlert, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
@@ -12,9 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { Logo } from './icons';
+import { SidebarNavContent } from './Sidebar';
 
 const navItems = [
   { href: '/', label: 'Inicio', icon: Home },
+  { href: '/fanpage', label: 'Fan Page', icon: Heart },
   { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];
 
@@ -87,7 +89,7 @@ export function BottomNavbar() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto grid h-16 max-w-lg grid-cols-3 items-center px-4">
+      <div className="container mx-auto grid h-16 max-w-lg grid-cols-4 items-center px-4">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
