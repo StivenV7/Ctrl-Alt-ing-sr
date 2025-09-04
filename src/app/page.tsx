@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Star, Users } from 'lucide-react';
+import { CheckCircle, Star, Users, MessageSquare, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
@@ -27,30 +27,6 @@ const features = [
     title: 'Coach de IA Personal',
     description:
       'Conversa con nuestro coach de IA para obtener sugerencias de retos personalizadas y mantener la motivación.',
-  },
-];
-
-const testimonials = [
-  {
-    name: 'Ana García',
-    role: 'Lectora Apasionada',
-    quote:
-      '¡Habitica cambió mi forma de leer! Los retos me mantuvieron comprometida y el coach de IA me dio ideas geniales para nuevos libros.',
-    avatar: 'https://i.pravatar.cc/150?u=ana',
-  },
-  {
-    name: 'Carlos Sánchez',
-    role: 'Desarrollador de Software',
-    quote:
-      'Como alguien que pasa mucho tiempo sentado, los retos de fitness me ayudaron a mantenerme activo. ¡Subir de rango es adictivo!',
-    avatar: 'https://i.pravatar.cc/150?u=carlos',
-  },
-  {
-    name: 'Laura Pérez',
-    role: 'Estudiante',
-    quote:
-      'La combinación de seguimiento de hábitos y la comunidad del foro es increíble. He aprendido mucho y me siento más productiva.',
-    avatar: 'https://i.pravatar.cc/150?u=laura',
   },
 ];
 
@@ -147,45 +123,45 @@ export default function LandingPage() {
                         width={600}
                         height={400}
                         className="rounded-lg shadow-xl"
-                        data-ai-hint="app dashboard"
+                        data-ai-hint="app interface"
                         />
                     </div>
                 </div>
             </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Community Features Section */}
         <section className="py-20 bg-muted/50">
           <div className="container mx-auto px-4">
             <div className="text-center">
-              <h2 className="text-3xl font-bold">Amado por Cientos de Usuarios</h2>
+              <h2 className="text-3xl font-bold">Más Allá de los Hábitos</h2>
               <p className="mt-2 text-muted-foreground">
-                No solo lo decimos nosotros. Escucha a nuestra comunidad.
+                Habitica es también un lugar para conectar e inspirar.
               </p>
             </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-3">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index}>
-                  <CardContent className="pt-6">
-                    <p className="italic">"{testimonial.quote}"</p>
-                  </CardContent>
+            <div className="mt-12 grid gap-8 md:grid-cols-2">
+                <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <Image
-                        src={testimonial.avatar}
-                        alt={testimonial.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                      <div>
-                        <p className="font-semibold">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                      </div>
+                      <MessageSquare className="h-8 w-8 text-primary" />
+                      <CardTitle>Comunidades de Interés</CardTitle>
                     </div>
                   </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Únete a nuestros foros temáticos para discutir sobre fitness, lectura, finanzas y más. Comparte consejos, haz preguntas y encuentra compañeros de viaje.</p>
+                  </CardContent>
                 </Card>
-              ))}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <Heart className="h-8 w-8 text-primary" />
+                            <CardTitle>Fan Page Creativa</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">¿Tienes una historia de éxito, una idea o una creación que te gustaría compartir? Publica en nuestra Fan Page y inspira a toda la comunidad.</p>
+                    </CardContent>
+                </Card>
             </div>
           </div>
         </section>
