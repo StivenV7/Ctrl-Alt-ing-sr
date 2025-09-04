@@ -13,7 +13,7 @@ export function CommunitySection() {
           <p className="mt-2 text-muted-foreground">
             Habitica es también un lugar para conectar e inspirar.
             <br />
-            <em className="text-sm">Att: Kevin Quintero</em>
+            <em className="text-sm text-primary">Att: Kevin Quintero</em>
           </p>
         </div>
         <div className="mt-12 grid gap-8 md:grid-cols-1 md:max-w-2xl mx-auto">

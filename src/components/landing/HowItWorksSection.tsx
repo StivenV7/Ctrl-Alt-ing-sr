@@ -14,7 +14,7 @@ export function HowItWorksSection() {
             <p className="mt-4 text-muted-foreground">
               Comienza tu viaje de superación en tres sencillos pasos. Nuestra plataforma está diseñada para que te concentres en lo que realmente importa: tu progreso.
               <br />
-              <em className="text-sm">Att: Oscar Valle</em>
+              <em className="text-sm text-primary">Att: Oscar Valle</em>
             </p>
             <ul className="mt-6 space-y-4">
               <li className="flex items-start">

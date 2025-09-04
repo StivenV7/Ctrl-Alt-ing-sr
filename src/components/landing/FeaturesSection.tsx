@@ -31,7 +31,7 @@ export function FeaturesSection() {
           <p className="mt-2 text-muted-foreground">
             Todo lo que necesitas para construir la mejor versión de ti mismo.
             <br />
-            <em className="text-sm">Att: Josué Sinisterra</em>
+            <em className="text-sm text-primary">Att: Josué Sinisterra</em>
           </p>
         </div>
         <div className="mt-12 grid gap-8 md:grid-cols-3">
