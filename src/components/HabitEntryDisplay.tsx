@@ -48,20 +48,20 @@ export function HabitEntryDisplay({ entry, index, habitId, mainDayEntries, onUpd
         onClick={handleToggleOpen}
       >
         <div className="flex items-center gap-2">
-          {entry.isExtra ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger><Star className="h-4 w-4 text-yellow-500"/></TooltipTrigger>
-                <TooltipContent><p>Entrada Extra</p></TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <h4 className="font-semibold flex items-center gap-2">
-              <Circle className={`h-3 w-3 ${entry.completed ? 'fill-green-500 text-green-500' : 'fill-muted-foreground text-muted-foreground'}`}/>
-              Día {dayNumber}
-            </h4>
-          )}
-          <p className="text-xs text-muted-foreground">{format(parseISO(entry.date), "d 'de' MMMM", { locale: es })}</p>
+            <div className="font-semibold flex items-center gap-2">
+                {entry.isExtra ? (
+                    <>
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500"/>
+                        <span>Avance Extra del Día {dayNumber}</span>
+                    </>
+                ) : (
+                    <>
+                        <Circle className={`h-3 w-3 ${entry.completed ? 'fill-green-500 text-green-500' : 'fill-muted-foreground text-muted-foreground'}`}/>
+                        <span>Día {dayNumber}</span>
+                    </>
+                )}
+            </div>
+            <p className="text-xs text-muted-foreground">{format(parseISO(entry.date), "d 'de' MMMM", { locale: es })}</p>
         </div>
         <ChevronDown className={`h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
