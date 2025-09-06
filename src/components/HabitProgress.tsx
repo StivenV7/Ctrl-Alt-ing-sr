@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Flame, Trash2, PlusCircle, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { calculateStreak } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type HabitProgressProps = {
