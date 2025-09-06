@@ -125,36 +125,44 @@ export default function HomePage() {
   const handleAddNewEntry = (habitId: string) => {
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
     let habitModified = false;
-    
+    let toastTitle = '';
+    let toastDescription = '';
+  
     const updatedHabits = habits.map(h => {
-        if (h.id === habitId) {
-            const mainEntries = h.entries.filter(e => !e.isExtra);
-            const lastMainEntry = mainEntries.length > 0 ? mainEntries.sort((a, b) => b.date.localeCompare(a.date))[0] : null;
-
-            // Check if we can add a new entry for today
-            if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {
-                // Add a new main entry for a new day
-                const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
-                h.entries.push(newEntry);
-                habitModified = true;
-                toast({ title: `¡Nuevo día, nuevo reto!`, description: 'Has registrado tu avance para hoy.' });
-            } else {
-                // Add an extra entry for the same day
-                const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
-                h.entries.push(newEntry);
-                habitModified = true;
-                toast({ title: '¡Imparable!', description: 'Has añadido una entrada extra para hoy.' });
-            }
+      if (h.id === habitId) {
+        // Create a new copy of entries to avoid mutation
+        const newEntries = [...h.entries];
+        const mainEntries = newEntries.filter(e => !e.isExtra);
+        const lastMainEntry = mainEntries.length > 0 ? mainEntries.sort((a, b) => b.date.localeCompare(a.date))[0] : null;
+  
+        if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {
+          // Add a new main entry for a new day
+          const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
+          newEntries.push(newEntry);
+          habitModified = true;
+          toastTitle = `¡Nuevo día, nuevo reto!`;
+          toastDescription = 'Has registrado tu avance para hoy.';
+        } else {
+          // Add an extra entry for the same day
+          const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
+          newEntries.push(newEntry);
+          habitModified = true;
+          toastTitle = '¡Imparable!';
+          toastDescription = 'Has añadido una entrada extra para hoy.';
         }
-        return h;
+        // Return a new habit object with the new entries array
+        return { ...h, entries: newEntries };
+      }
+      return h;
     });
-
+  
     if (habitModified) {
-        setHabits(updatedHabits);
-        const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
-        saveData({ habits: habitsToSave });
+      setHabits(updatedHabits);
+      toast({ title: toastTitle, description: toastDescription });
+      const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
+      saveData({ habits: habitsToSave });
     } else {
-        toast({ title: 'Ya registraste hoy', description: 'Puedes añadir una entrada extra si quieres.', variant: 'default' });
+      toast({ title: 'Ya registraste hoy', description: 'Puedes añadir una entrada extra si quieres.', variant: 'default' });
     }
   };
 
