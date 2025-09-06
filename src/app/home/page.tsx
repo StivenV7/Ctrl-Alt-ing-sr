@@ -93,19 +93,19 @@ export default function HomePage() {
 
   const handleUpdateEntry = (habitId: string, entryDate: string, newValues: Partial<HabitEntry>) => {
      let newXp = userXp;
-
      const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
-            const oldCompletedCount = (h.entries || []).filter(e => e.completed).length;
+            const entryToUpdate = h.entries.find(e => e.date === entryDate && !e.isExtra);
+            const oldCompleted = entryToUpdate?.completed;
 
             const updatedEntries = h.entries.map(e => e.date === entryDate ? { ...e, ...newValues } : e);
 
-            const newCompletedCount = updatedEntries.filter(e => e.completed).length;
-            if (newCompletedCount > oldCompletedCount) {
-              newXp += (newCompletedCount - oldCompletedCount);
-            }
-             if (newCompletedCount < oldCompletedCount) {
-              newXp -= (oldCompletedCount - newCompletedCount);
+            const newCompleted = updatedEntries.find(e => e.date === entryDate && !e.isExtra)?.completed;
+
+            if (newCompleted && !oldCompleted) {
+                newXp += 1;
+            } else if (!newCompleted && oldCompleted) {
+                newXp -= 1;
             }
 
             return { ...h, entries: updatedEntries };
@@ -137,7 +137,7 @@ export default function HomePage() {
                 const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
                 h.entries.push(newEntry);
                 habitModified = true;
-                toast({ title: `Nuevo día, nuevo reto!`, description: 'Has registrado tu avance para hoy.' });
+                toast({ title: `¡Nuevo día, nuevo reto!`, description: 'Has registrado tu avance para hoy.' });
             } else {
                 // Add an extra entry for the same day
                 const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
@@ -264,3 +264,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

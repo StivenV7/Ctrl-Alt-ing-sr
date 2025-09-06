@@ -48,9 +48,6 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
     const streak = useMemo(() => calculateStreak(entries).count, [entries]);
 
     const handleJournalChange = (date: string, isExtra: boolean | undefined, index: number, value: string) => {
-        // We need a more robust way to identify the entry
-        // For now, let's stick to the original plan, but this is a fragile point.
-        // A unique ID per entry would be better.
         onUpdateEntry(habit.id, date, { journal: value });
     };
 
@@ -143,3 +140,5 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
         </Accordion>
     );
 }
+
+    
