@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut, MessagesSquare, ShieldAlert } from 'lucide-react';
+import { Home, LogOut } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,12 +14,11 @@ import { SheetHeader, SheetTitle } from './ui/sheet';
 
 const navItems = [
     { href: '/home', label: 'Inicio', icon: Home },
-    { href: '/forum', label: 'Foro', icon: MessagesSquare },
 ];
 
 export function SidebarNavContent() {
   const pathname = usePathname();
-  const { user, signOut, isAdmin, userDoc } = useAuth();
+  const { user, signOut, userDoc } = useAuth();
   const displayName = userDoc?.data()?.displayName || user?.displayName || 'Usuario';
   const userXp = userDoc?.data()?.xp || 0;
 
@@ -40,7 +39,7 @@ export function SidebarNavContent() {
         <nav className="flex flex-col gap-2 p-4">
             {navItems.map((item) => (
                  <Link key={item.href} href={item.href}>
-                    <Button variant={pathname === item.href ? 'secondary' : 'ghost'} className="w-full justify-start">
+                    <Button variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} className="w-full justify-start">
                         <item.icon className="size-4 mr-2" />
                         <span>{item.label}</span>
                     </Button>
@@ -50,14 +49,6 @@ export function SidebarNavContent() {
         <div className="mt-auto flex flex-col gap-2 border-t p-4">
             {user && (
                 <>
-                    {isAdmin && (
-                        <Link href="/admin">
-                            <Button variant="ghost" className="w-full justify-start">
-                                <ShieldAlert className="size-4 mr-2 text-destructive"/>
-                                <span>Panel Admin</span>
-                            </Button>
-                        </Link>
-                    )}
                     <div className="flex items-center gap-2 rounded-md p-2">
                         <Avatar className="size-8">
                             {user.photoURL && <AvatarImage src={user.photoURL} alt={displayName} />}

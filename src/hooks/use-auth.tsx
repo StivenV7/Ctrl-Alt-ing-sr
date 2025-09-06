@@ -8,7 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, DocumentSnapshot, DocumentData, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, DocumentSnapshot, DocumentData, onSnapshot } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -17,7 +17,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   setTheme: (theme: 'light' | 'blue' | 'pink') => void;
   userDoc: DocumentSnapshot<DocumentData> | null;
-  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,7 +25,6 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   setTheme: () => {},
   userDoc: null,
-  isAdmin: false,
 });
 
 
@@ -34,7 +32,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userDoc, setUserDoc] = useState<DocumentSnapshot<DocumentData> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   
   const setTheme = (theme: 'light' | 'blue' | 'pink') => {
     if (typeof window !== "undefined") {
@@ -49,22 +46,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userRef = doc(db, 'users', user.uid);
         
         // Use onSnapshot to listen for real-time updates to the user document
-        const unsubDoc = onSnapshot(userRef, async (docSnap) => {
+        const unsubDoc = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                
-                // --- MIGRATION LOGIC ---
-                // If user exists but doesn't have a role, assign 'user' role.
-                if (!data.role) {
-                  await updateDoc(userRef, { role: 'user' });
-                  // The snapshot will update automatically after this, so no need to manually set state here.
-                } else {
-                  setUserDoc(docSnap);
-                  const userRole = data.role || 'user';
-                  const userTheme = data.theme || 'light';
-                  setIsAdmin(userRole === 'admin');
-                  setTheme(userTheme);
-                }
+                setUserDoc(docSnap);
+                const userTheme = data.theme || 'light';
+                setTheme(userTheme);
             }
             setLoading(false);
         }, (error) => {
@@ -77,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUser(null);
         setUserDoc(null);
-        setIsAdmin(false);
         setTheme('light');
         setLoading(false);
       }
@@ -92,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme, isAdmin }}>
+    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme }}>
       {children}
     </AuthContext.Provider>
   );

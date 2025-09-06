@@ -7,12 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, collection, query, getCountFromServer, writeBatch, serverTimestamp, getDocs } from "firebase/firestore"; 
+import { doc, setDoc } from "firebase/firestore"; 
 import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,51 +33,6 @@ const formSchema = z.object({
 });
 
 let activeTab = 'signin';
-
-const defaultCategories = [
-    { name: 'Lectura y Crecimiento', description: 'Un espacio para discutir libros, artículos y podcasts que nos ayuden a crecer.' },
-    { name: 'Fitness y Salud', description: 'Comparte tus rutinas de ejercicio, recetas saludables y consejos de bienestar.' },
-    { name: 'Productividad y Enfoque', description: 'Para los que buscan mejorar su gestión del tiempo y concentración.' },
-    { name: 'Meditación y Mindfulness', description: 'Encuentra calma y comparte tus prácticas de meditación y atención plena.' },
-    { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
-];
-
-const seedDefaultData = async (adminUserId: string) => {
-    const batch = writeBatch(db);
-
-    // Seed forum categories
-    const categoriesRef = collection(db, 'forum_categories');
-    const categoriesSnapshot = await getDocs(query(categoriesRef));
-    if (categoriesSnapshot.empty) {
-        console.log("Seeding default forum categories...");
-        defaultCategories.forEach(category => {
-            const docRef = doc(categoriesRef);
-            batch.set(docRef, { 
-                ...category,
-                createdBy: adminUserId,
-                createdAt: serverTimestamp()
-            });
-        });
-    }
-
-    // Seed initial fan post
-    const postsRef = collection(db, 'fan_posts');
-    const postsSnapshot = await getDocs(query(postsRef));
-    if (postsSnapshot.empty) {
-        console.log("Seeding initial fan post...");
-        const postDocRef = doc(postsRef);
-        batch.set(postDocRef, {
-            title: '¡Bienvenidos a la comunidad Habitica!',
-            content: 'Este es el primer post en nuestra nueva Fan Page. Un espacio para compartir, inspirar y crecer juntos. ¡Estamos muy contentos de tenerte aquí!',
-            authorId: adminUserId,
-            authorName: 'Admin',
-            authorImage: null,
-            createdAt: serverTimestamp()
-        });
-    }
-    
-    await batch.commit();
-}
 
 type LoginFormProps = {
   setError: (error: string | null) => void;
@@ -113,24 +68,13 @@ export function LoginForm({ setError }: LoginFormProps) {
             return;
         }
         
-        // Determine role before creating user
-        const usersCollection = collection(db, 'users');
-        const snapshot = await getCountFromServer(usersCollection);
-        const isFirstUser = snapshot.data().count === 0;
-        const role = isFirstUser ? 'admin' : 'user';
-
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
 
         await updateProfile(user, {
             displayName: values.username,
         });
-
-        // Seed default data if it's the very first user
-        if (isFirstUser) {
-            await seedDefaultData(user.uid);
-        }
-
+        
         const userGender = values.gender || 'prefer-not-to-say';
         const theme = userGender === 'male' ? 'blue' : userGender === 'female' ? 'pink' : 'light';
         setTheme(theme);
@@ -144,8 +88,7 @@ export function LoginForm({ setError }: LoginFormProps) {
           theme: theme,
           xp: 0,
           habits: [],
-          followedCategoryIds: [],
-          role: role,
+          role: 'user', // All new signups are users
         });
       }
     } catch (error: any) {

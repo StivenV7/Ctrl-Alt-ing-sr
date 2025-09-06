@@ -6,7 +6,6 @@ import { Footer } from '@/components/Footer';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FeaturesSection } from '@/components/landing/FeaturesSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
-import { CommunitySection } from '@/components/landing/CommunitySection';
 import { CtaSection } from '@/components/landing/CtaSection';
 
 export default function LandingPage() {
@@ -24,7 +23,6 @@ export default function LandingPage() {
         <HowItWorksSection />
 
         {/* Parte de Kevin Quintero */}
-        <CommunitySection />
         <CtaSection />
       </main>
       <Footer />

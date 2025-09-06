@@ -1,8 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
-import { Timestamp } from 'firebase/firestore';
-
 
 // A daily entry for a habit challenge
 export const HabitEntrySchema = z.object({
@@ -67,26 +65,6 @@ export const ChatOutputSchema = z.object({
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
-// FORUM TYPES
-
-export interface ForumCategory {
-  id: string;
-  name: string;
-  description: string;
-  createdBy: string;
-  createdAt: Timestamp;
-}
-
-export interface ForumMessage {
-  id: string;
-  content: string;
-  timestamp: Timestamp;
-  userId: string;
-  userName: string;
-  userImage: string | null;
-  categoryId: string;
-}
-
 export interface FirestoreUser {
   uid: string;
   displayName: string;
@@ -94,17 +72,6 @@ export interface FirestoreUser {
   theme: 'light' | 'blue' | 'pink';
   xp: number;
   habits: FirestoreHabit[];
-  followedCategoryIds: string[];
   role: 'user' | 'admin';
   gender?: string;
-}
-
-export interface CategorySuggestion {
-  id: string;
-  name: string;
-  description: string;
-  requestedBy: string; // userId
-  requestedByName: string; // userName for display
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: Timestamp;
 }

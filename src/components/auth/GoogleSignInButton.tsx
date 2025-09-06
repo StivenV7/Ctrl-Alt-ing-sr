@@ -6,7 +6,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { doc, setDoc, getDoc, collection, query, getDocs, writeBatch, serverTimestamp, getCountFromServer } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 48 48">
@@ -16,52 +16,6 @@ const GoogleIcon = () => (
     <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.021 35.596 44 30.023 44 24c0-1.341-.138-2.65-.389-3.917z" />
   </svg>
 );
-
-const defaultCategories = [
-    { name: 'Lectura y Crecimiento', description: 'Un espacio para discutir libros, artículos y podcasts que nos ayuden a crecer.' },
-    { name: 'Fitness y Salud', description: 'Comparte tus rutinas de ejercicio, recetas saludables y consejos de bienestar.' },
-    { name: 'Productividad y Enfoque', description: 'Para los que buscan mejorar su gestión del tiempo y concentración.' },
-    { name: 'Meditación y Mindfulness', description: 'Encuentra calma y comparte tus prácticas de meditación y atención plena.' },
-    { name: 'Finanzas Personales', description: 'Conversa sobre presupuestos, ahorros, inversiones y cómo alcanzar la libertad financiera.' },
-];
-
-const seedDefaultData = async (adminUserId: string) => {
-    const batch = writeBatch(db);
-
-    // Seed forum categories
-    const categoriesRef = collection(db, 'forum_categories');
-    const categoriesSnapshot = await getDocs(query(categoriesRef));
-    if (categoriesSnapshot.empty) {
-        console.log("Seeding default forum categories...");
-        defaultCategories.forEach(category => {
-            const docRef = doc(categoriesRef);
-            batch.set(docRef, { 
-                ...category,
-                createdBy: adminUserId,
-                createdAt: serverTimestamp()
-            });
-        });
-    }
-
-    // Seed initial fan post
-    const postsRef = collection(db, 'fan_posts');
-    const postsSnapshot = await getDocs(query(postsRef));
-    if (postsSnapshot.empty) {
-        console.log("Seeding initial fan post...");
-        const postDocRef = doc(postsRef);
-        batch.set(postDocRef, {
-            title: '¡Bienvenidos a la comunidad Habitica!',
-            content: 'Este es el primer post en nuestra nueva Fan Page. Un espacio para compartir, inspirar y crecer juntos. ¡Estamos muy contentos de tenerte aquí!',
-            authorId: adminUserId,
-            authorName: 'Admin',
-            authorImage: null,
-            createdAt: serverTimestamp()
-        });
-    }
-    
-    await batch.commit();
-}
-
 
 type GoogleSignInButtonProps = {
   setError: (error: string | null) => void;
@@ -82,16 +36,6 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
       const docSnap = await getDoc(userRef);
 
       if (!docSnap.exists()) {
-        const usersCollection = collection(db, 'users');
-        const snapshot = await getCountFromServer(usersCollection);
-        const isFirstUser = snapshot.data().count === 0;
-        const role = isFirstUser ? 'admin' : 'user';
-
-        // If it's a new user, seed default data
-        if (isFirstUser) {
-           await seedDefaultData(user.uid);
-        }
-        
         await setDoc(userRef, {
           uid: user.uid,
           displayName: user.displayName,
@@ -99,8 +43,7 @@ export function GoogleSignInButton({ setError }: GoogleSignInButtonProps) {
           theme: 'light', // Default theme for Google sign-ups
           xp: 0,
           habits: [],
-          followedCategoryIds: [],
-          role: role,
+          role: 'user',
         });
       }
       
