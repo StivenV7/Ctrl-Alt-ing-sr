@@ -1,7 +1,9 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { subDays, format, isSameDay, parseISO } from 'date-fns';
-import type { HabitEntry } from './types';
+import type { Habit, HabitEntry } from './types';
+import { BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
 
 
 export function cn(...inputs: ClassValue[]) {
@@ -72,4 +74,33 @@ export function calculateStreak(entries: HabitEntry[]): { count: number, justInc
 
 
     return { count: currentStreak, justIncreased };
+}
+
+
+// Map stored habit IDs to Lucide icons
+const ICONS: { [key: string]: React.ElementType } = {
+  'habit-1': BookOpen,
+  'habit-2': Dumbbell,
+  'habit-3': HeartPulse,
+};
+
+export const getIconForHabit = (habitId: string) => {
+  return ICONS[habitId] || TrendingUp;
+};
+
+
+export function calculateCompletedHabitsByCategory(habits: Habit[]): { [category: string]: number, total: number } {
+  const counts: { [category: string]: number } = {};
+  let total = 0;
+
+  habits.forEach(habit => {
+    const mainEntriesCount = habit.entries.filter(e => !e.isExtra).length;
+    if (mainEntriesCount >= habit.duration) {
+      // Habit challenge is completed
+      counts[habit.category] = (counts[habit.category] || 0) + 1;
+      total++;
+    }
+  });
+
+  return { ...counts, total };
 }

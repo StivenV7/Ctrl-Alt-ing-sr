@@ -19,19 +19,18 @@ export type Habit = {
   icon: LucideIcon; // This is for client-side display only
   duration: number; // Duration of the challenge in days
   entries: HabitEntry[]; // Record of daily progress
-  // DEPRECATED properties, will be calculated from entries
-  completed?: boolean; 
-  streak?: number;
-  lastCompletedDate?: string | null;
 };
 
 // This is the shape of the habit data stored in Firestore
-export type FirestoreHabit = Omit<Habit, 'icon' | 'completed' | 'streak' | 'lastCompletedDate'>;
+export type FirestoreHabit = Omit<Habit, 'icon'>;
 
 export type Rank = {
   name: string;
-  minXp: number;
   icon: LucideIcon;
+  description: string;
+  requirements: {
+    [category: string]: number;
+  };
 };
 
 // Schema for AI chat suggestions for detailed habits/challenges

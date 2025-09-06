@@ -4,13 +4,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut, MessageCircle } from 'lucide-react';
+import { Home, LogOut, MessageCircle, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from './icons';
 import { SheetHeader, SheetTitle } from './ui/sheet';
+import { Habit, FirestoreHabit } from '@/lib/types';
+import { calculateCompletedHabitsByCategory, getIconForHabit } from '@/lib/utils';
 
 
 export function SidebarHeader() {
@@ -28,17 +30,39 @@ export function SidebarHeader() {
 
 const navItems = [
     { href: '/home', label: 'Inicio', icon: Home },
+    { href: '/ranks', label: 'Rangos', icon: Trophy },
 ];
 
 export function SidebarNavContent() {
   const pathname = usePathname();
   const { user, signOut, userDoc } = useAuth();
   const displayName = userDoc?.data()?.displayName || user?.displayName || 'Usuario';
-  const userXp = userDoc?.data()?.xp || 0;
+  
+  const userHabits: Habit[] = useMemo(() => {
+    if (!userDoc?.exists()) return [];
+    const userData = userDoc.data();
+    return (userData?.habits || []).map((h: FirestoreHabit) => ({
+      ...h,
+      icon: getIconForHabit(h.id),
+      entries: h.entries || [],
+    }));
+  }, [userDoc]);
+
+  const completedHabitsByCategory = useMemo(() => calculateCompletedHabitsByCategory(userHabits), [userHabits]);
 
   const currentRank = useMemo(() => {
-    return [...RANKS].reverse().find(rank => userXp >= rank.minXp) ?? RANKS[0];
-  }, [userXp]);
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+      const rank = RANKS[i];
+      const requirementsMet = Object.entries(rank.requirements).every(([category, requiredCount]) => {
+        const userCount = completedHabitsByCategory[category] || 0;
+        return userCount >= requiredCount;
+      });
+      if (requirementsMet) {
+        return rank;
+      }
+    }
+    return RANKS[0];
+  }, [completedHabitsByCategory]);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -68,7 +92,7 @@ export function SidebarNavContent() {
                         </Avatar>
                         <div className="flex flex-col text-sm">
                             <span className="font-semibold">{displayName}</span>
-                            <span className="text-xs text-muted-foreground">{currentRank.name} - {userXp} XP</span>
+                            <span className="text-xs text-muted-foreground">{currentRank.name}</span>
                         </div>
                     </div>
 

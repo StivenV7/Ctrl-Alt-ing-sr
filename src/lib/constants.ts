@@ -1,40 +1,44 @@
-import { BookOpen, Dumbbell, HeartPulse, Shield, Star, Trophy } from 'lucide-react';
-import type { Habit, Rank } from './types';
 
-export const INITIAL_HABITS: Habit[] = [
-  {
-    id: 'habit-1',
-    name: 'Leer 10 páginas',
-    category: 'Crecimiento Personal',
-    icon: BookOpen,
-    completed: false,
-    streak: 5,
-    lastCompletedDate: '2024-07-20',
-  },
-  {
-    id: 'habit-2',
-    name: '30 minutos de ejercicio',
-    category: 'Salud',
-    icon: Dumbbell,
-    completed: true,
-    streak: 12,
-    lastCompletedDate: new Date().toISOString().split('T')[0],
-  },
-  {
-    id: 'habit-3',
-    name: 'Meditar 5 minutos',
-    category: 'Bienestar',
-    icon: HeartPulse,
-    completed: false,
-    streak: 2,
-    lastCompletedDate: '2024-07-18',
-  },
-];
+import { Shield, Star, Trophy, Award, Gem, Crown } from 'lucide-react';
+import type { Rank } from './types';
+
 
 export const RANKS: Rank[] = [
-  { name: 'Novato', minXp: 0, icon: Shield },
-  { name: 'Aprendiz', minXp: 10, icon: Shield },
-  { name: 'Adepto', minXp: 30, icon: Star },
-  { name: 'Maestro', minXp: 60, icon: Trophy },
-  { name: 'Gran Maestro', minXp: 100, icon: Trophy },
+  { 
+    name: 'Novato', 
+    icon: Shield,
+    description: "Completa tu primer reto para empezar.",
+    requirements: { "total": 1 } 
+  },
+  { 
+    name: 'Aprendiz', 
+    icon: Star,
+    description: "Completa 2 retos en 2 categorías distintas.",
+    requirements: { "Salud": 1, "Crecimiento Personal": 1 } 
+  },
+  { 
+    name: 'Adepto', 
+    icon: Award,
+    description: "Completa 5 retos en al menos 3 categorías.",
+    requirements: { "Salud": 2, "Crecimiento Personal": 2, "Bienestar": 1 } 
+  },
+  { 
+    name: 'Maestro', 
+    icon: Trophy,
+    description: "Alcanza la maestría con 10 retos completados.",
+    requirements: { "Salud": 4, "Crecimiento Personal": 3, "Bienestar": 3 } 
+  },
+  { 
+    name: 'Gran Maestro', 
+    icon: Gem,
+    description: "Un verdadero experto en hábitos.",
+    requirements: { "Salud": 7, "Crecimiento Personal": 7, "Bienestar": 6 } 
+  },
+  {
+    name: 'Leyenda',
+    icon: Crown,
+    description: "Has trascendido la disciplina.",
+    requirements: { "Salud": 10, "Crecimiento Personal": 10, "Bienestar": 10 }
+  }
 ];
+
