@@ -9,6 +9,7 @@ export const HabitEntrySchema = z.object({
   date: z.string().describe('The date for the entry in YYYY-MM-DD format.'),
   completed: z.boolean().describe('Whether the habit was completed on this date.'),
   journal: z.string().optional().describe('A user-written journal entry for the day.'),
+  isExtra: z.boolean().optional().describe('True if this is an extra entry for a given day.'),
 });
 export type HabitEntry = z.infer<typeof HabitEntrySchema>;
 

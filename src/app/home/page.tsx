@@ -9,14 +9,48 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { addDays, format, startOfDay } from 'date-fns';
+import { format, isSameDay, parseISO, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
 import { AddHabitDialog } from '@/components/AddHabitDialog';
 import { AIChatPanel } from '@/components/AIChatPanel';
-import { HabitDetails } from '@/components/HabitDetails';
+import { HabitProgress } from '@/components/HabitProgress';
+import { calculateStreak } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+
+
+// Map stored habit IDs to Lucide icons
+const ICONS: { [key: string]: React.ElementType } = {
+  'habit-1': BookOpen,
+  'habit-2': Dumbbell,
+  'habit-3': HeartPulse,
+};
+
+const getIconForHabit = (habitId: string) => {
+  return ICONS[habitId] || TrendingUp;
+};
+
+
+export default function HomePage() {
+  const [habits, setHabits] = useState<Habit.tsx
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast"
+import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from '@/lib/types';
+import { chat } from '@/ai/flows/chat-flow';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from '@/lib/firebase';
+import { format, startOfDay, isSameDay, parseISO } from 'date-fns';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
+import { AddHabitDialog } from '@/components/AddHabitDialog';
+import { AIChatPanel } from '@/components/AIChatPanel';
+import { HabitProgress } from '@/components/HabitProgress';
 import { calculateStreak } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
@@ -81,7 +115,6 @@ export default function HomePage() {
   const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
     if (!userRef) return;
     try {
-      // Use setDoc with merge: true to both create and update documents safely.
       await setDoc(userRef, dataToSave, { merge: true });
     } catch (error) {
       console.error("Error saving data:", error);
@@ -92,34 +125,28 @@ export default function HomePage() {
       });
     }
   }, [userRef, toast]);
-  
-  const handleHabitUpdate = (habitId: string, updatedEntries: HabitEntry[]) => {
-    let newXp = userXp;
-    
-    const updatedHabits = habits.map(h => {
+
+  const handleUpdateEntry = (habitId: string, entryDate: string, newValues: Partial<HabitEntry>) => {
+     let newXp = userXp;
+
+     const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
             const oldCompletedCount = (h.entries || []).filter(e => e.completed).length;
+
+            const updatedEntries = h.entries.map(e => e.date === entryDate ? { ...e, ...newValues } : e);
+
             const newCompletedCount = updatedEntries.filter(e => e.completed).length;
-            
-            // Grant XP for new completions, but don't remove for un-checking
             if (newCompletedCount > oldCompletedCount) {
               newXp += (newCompletedCount - oldCompletedCount);
+            }
+             if (newCompletedCount < oldCompletedCount) {
+              newXp -= (oldCompletedCount - newCompletedCount);
             }
 
             return { ...h, entries: updatedEntries };
         }
         return h;
     });
-
-    const targetHabitEntries = updatedHabits.find(h => h.id === habitId)?.entries || [];
-    const updatedStreak = calculateStreak(targetHabitEntries);
-    
-    if (updatedStreak.justIncreased) {
-       toast({
-        title: `🔥 ¡Racha de ${updatedStreak.count} días!`,
-        description: "¡Sigue así!",
-      });
-    }
 
     setHabits(updatedHabits);
     if(newXp !== userXp) {
@@ -129,9 +156,44 @@ export default function HomePage() {
     const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
     saveData({ habits: habitsToSave, xp: newXp });
   };
+  
+  const handleAddNewEntry = (habitId: string) => {
+    const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
+    let habitModified = false;
+    
+    const updatedHabits = habits.map(h => {
+        if (h.id === habitId) {
+            const mainEntries = h.entries.filter(e => !e.isExtra);
+            const lastMainEntry = mainEntries.length > 0 ? mainEntries[mainEntries.length - 1] : null;
+
+            // Check if we can add a new entry for today
+            if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {
+                // Add a new main entry for a new day
+                const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
+                h.entries.push(newEntry);
+                habitModified = true;
+                toast({ title: `Nuevo día, nuevo reto!`, description: 'Has registrado tu avance para hoy.' });
+            } else {
+                // Add an extra entry for the same day
+                const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
+                h.entries.push(newEntry);
+                habitModified = true;
+                toast({ title: '¡Imparable!', description: 'Has añadido una entrada extra para hoy.' });
+            }
+        }
+        return h;
+    });
+
+    if (habitModified) {
+        setHabits(updatedHabits);
+        const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
+        saveData({ habits: habitsToSave });
+    } else {
+        toast({ title: 'Ya registraste hoy', description: 'Puedes añadir una entrada extra si quieres.', variant: 'default' });
+    }
+  };
 
   const handleAddHabit = (name: string, category: string, description: string, duration: number) => {
-    const startDate = startOfDay(new Date());
     const newHabit: Habit = {
       id: `habit-${Date.now()}`,
       name,
@@ -139,11 +201,7 @@ export default function HomePage() {
       description,
       duration,
       icon: TrendingUp,
-      entries: Array.from({ length: duration }, (_, i) => ({
-        date: format(addDays(startDate, i), 'yyyy-MM-dd'),
-        completed: false,
-        journal: '',
-      })),
+      entries: [],
     };
     const updatedHabits = [...habits, newHabit];
     setHabits(updatedHabits);
@@ -214,10 +272,11 @@ export default function HomePage() {
             <CardContent>
             <div className="space-y-4">
                 {habits.length > 0 ? habits.map(habit => (
-                <HabitDetails 
+                <HabitProgress 
                     key={habit.id} 
                     habit={habit} 
-                    onUpdate={handleHabitUpdate}
+                    onAddNewEntry={handleAddNewEntry}
+                    onUpdateEntry={handleUpdateEntry}
                     onDelete={handleDeleteHabit}
                 />
                 )) : (

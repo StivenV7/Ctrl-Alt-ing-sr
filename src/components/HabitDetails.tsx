@@ -1,184 +1,109 @@
-
-'use client';
-
-import { useState, useMemo } from 'react';
-import type { Habit, HabitEntry } from '@/lib/types';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-import { Flame, Trash2, BookText } from 'lucide-react';
-import { format, parseISO, startOfDay, addDays, isBefore, isAfter, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { calculateStreak } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
+import { z } from 'zod';
+import { Timestamp } from 'firebase/firestore';
 
 
-type HabitDetailsProps = {
-    habit: Habit;
-    onUpdate: (habitId: string, entries: HabitEntry[]) => void;
-    onDelete: (habitId: string) => void;
+// A daily entry for a habit challenge
+export const HabitEntrySchema = z.object({
+  date: z.string().describe('The date for the entry in YYYY-MM-DD format.'),
+  completed: z.boolean().describe('Whether the habit was completed on this date.'),
+  journal: z.string().optional().describe('A user-written journal entry for the day.'),
+  isExtra: z.boolean().optional().describe('True if this is an extra entry for a given day.'),
+});
+export type HabitEntry = z.infer<typeof HabitEntrySchema>;
+
+export type Habit = {
+  id: string;
+  name: string;
+  category: string;
+  description: string; // Detailed description of the habit/challenge
+  icon: LucideIcon; // This is for client-side display only
+  duration: number; // Duration of the challenge in days
+  entries: HabitEntry[]; // Record of daily progress
+  // DEPRECATED properties, will be calculated from entries
+  completed?: boolean; 
+  streak?: number;
+  lastCompletedDate?: string | null;
 };
 
-export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
-    const initialEntries = useMemo(() => habit.entries || [], [habit.entries]);
-    const [entries, setEntries] = useState<HabitEntry[]>(initialEntries);
-    const [selectedDay, setSelectedDay] = useState<Date | undefined>(startOfDay(new Date()));
+// This is the shape of the habit data stored in Firestore
+export type FirestoreHabit = Omit<Habit, 'icon' | 'completed' | 'streak' | 'lastCompletedDate'>;
 
-    const handleSaveChanges = () => {
-        // Since changes are now applied instantly, this can be used when the accordion closes
-        const hasChanges = JSON.stringify(initialEntries) !== JSON.stringify(entries);
-        if (hasChanges) {
-            onUpdate(habit.id, entries);
-        }
-    };
-    
-    const startDate = useMemo(() => initialEntries.length > 0 ? parseISO(initialEntries[0].date) : startOfDay(new Date()), [initialEntries]);
-    const endDate = useMemo(() => addDays(startDate, habit.duration - 1), [startDate, habit.duration]);
+export type Rank = {
+  name: string;
+  minXp: number;
+  icon: LucideIcon;
+};
 
-    const completedDays = useMemo(() => entries.filter(e => e.completed).map(e => parseISO(e.date)), [entries]);
-    const journalDays = useMemo(() => entries.filter(e => e.journal && e.journal.trim() !== '').map(e => parseISO(e.date)), [entries]);
+// Schema for AI chat suggestions for detailed habits/challenges
+export const HabitSuggestionSchema = z.object({
+    name: z.string().describe('The name of the suggested habit challenge.'),
+    category: z.string().describe('The category for the habit (e.g., Health, Productivity, Creativity).'),
+    description: z.string().describe("A detailed description of the habit and why it's beneficial."),
+    duration: z.number().describe('The suggested duration for the challenge in days (e.g., 7, 21, 30).'),
+});
 
-    const completedCount = useMemo(() => completedDays.length, [completedDays]);
-    const progressPercentage = useMemo(() => (completedCount / (habit.duration || 1)) * 100, [completedCount, habit.duration]);
-    const streak = useMemo(() => calculateStreak(entries).count, [entries]);
+// Schema for a single chat message
+export const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+  suggestions: z.array(HabitSuggestionSchema).optional().describe('Actionable habit suggestions, if any.'),
+});
 
-    const selectedEntry = useMemo(() => {
-        if (!selectedDay) return undefined;
-        return entries.find(e => isSameDay(parseISO(e.date), selectedDay));
-    }, [selectedDay, entries]);
+// Type for a single chat message
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
-    const handleDayClick = (day: Date | undefined) => {
-        if (day && !isAfter(day, startOfDay(new Date()))) {
-            setSelectedDay(day);
-        }
-    }
-    
-    const handleEntryChange = (date: string, newValues: Partial<HabitEntry>) => {
-        const updatedEntries = entries.map(entry => 
-            entry.date === date ? { ...entry, ...newValues } : entry
-        );
-        setEntries(updatedEntries);
-        onUpdate(habit.id, updatedEntries); // Update instantly
-    };
+// Input schema for the chat flow
+export const ChatInputSchema = z.object({
+  history: z.array(ChatMessageSchema).describe('The conversation history.'),
+});
+export type ChatInput = z.infer<typeof ChatInputSchema>;
 
+// Output schema for the chat flow
+export const ChatOutputSchema = z.object({
+  answer: z.string().describe('The AI coach\'s response.'),
+  suggestions: z.array(HabitSuggestionSchema).optional().describe('A list of actionable habit challenges suggested by the AI.'),
+});
+export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
-    return (
-        <Accordion type="single" collapsible className="w-full" onValueChange={handleSaveChanges}>
-            <AccordionItem value={habit.id} className="border rounded-lg mb-4 shadow-sm">
-                <AccordionTrigger className="p-4 hover:no-underline">
-                    <div className="flex-grow grid grid-cols-5 items-center gap-4 text-left">
-                        <div className="col-span-3">
-                            <p className="font-semibold">{habit.name}</p>
-                            <p className="text-sm text-muted-foreground">{habit.category}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-amber-500 font-bold">
-                            <Flame className="h-5 w-5"/>
-                            <span>{streak}</span>
-                        </div>
-                         <div className="text-sm">
-                            <p>Día {completedCount}/{habit.duration || 'N/A'}</p>
-                            <Progress value={progressPercentage} className="h-2 mt-1" />
-                        </div>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                    <p className="text-sm text-muted-foreground mb-4">{habit.description}</p>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="rounded-md border flex justify-center">
-                            <TooltipProvider>
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDay}
-                                    onSelect={handleDayClick}
-                                    month={selectedDay}
-                                    onMonthChange={setSelectedDay}
-                                    fromDate={startDate}
-                                    toDate={endDate}
-                                    disabled={(date) => isAfter(date, startOfDay(new Date()))}
-                                    locale={es}
-                                    modifiers={{ 
-                                        completed: completedDays,
-                                        journal: journalDays
-                                    }}
-                                    modifiersClassNames={{
-                                        completed: "bg-primary/80 text-primary-foreground rounded-full",
-                                        journal: "bg-transparent",
-                                    }}
-                                    components={{
-                                        DayContent: ({ date, ...props }) => {
-                                            const hasJournal = journalDays.some(d => isSameDay(d, date));
-                                            return (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div className="relative flex items-center justify-center h-full w-full">
-                                                            <span>{format(date, 'd')}</span>
-                                                            {hasJournal && <div className="absolute bottom-1 h-1 w-1 rounded-full bg-accent-foreground"></div>}
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    {hasJournal && (
-                                                        <TooltipContent>
-                                                            <p className="font-bold">Tu Experiencia:</p>
-                                                            <p className="max-w-xs">{entries.find(e => isSameDay(parseISO(e.date), date))?.journal}</p>
-                                                        </TooltipContent>
-                                                    )}
-                                                </Tooltip>
-                                            );
-                                        }
-                                    }}
-                                />
-                            </TooltipProvider>
-                        </div>
+// FORUM TYPES
 
-                        <div className="flex flex-col gap-2 p-3 rounded-md bg-muted/50">
-                            {selectedEntry ? (
-                                <>
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-lg">{format(parseISO(selectedEntry.date), "EEEE, d 'de' MMMM", { locale: es })}</h4>
-                                        <div className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`check-${habit.id}-${selectedEntry.date}`}
-                                                checked={selectedEntry.completed}
-                                                onCheckedChange={(checked) => handleEntryChange(selectedEntry.date, { completed: !!checked })}
-                                            />
-                                            <label htmlFor={`check-${habit.id}-${selectedEntry.date}`}>Completado</label>
-                                        </div>
-                                    </div>
-                                    <div className="flex-grow flex flex-col gap-2">
-                                        <label htmlFor={`journal-${habit.id}-${selectedEntry.date}`} className="flex items-center gap-2 font-medium text-sm"><BookText className="h-4 w-4"/> Tu Experiencia</label>
-                                        <Textarea
-                                            id={`journal-${habit.id}-${selectedEntry.date}`}
-                                            placeholder="¿Qué aprendiste? ¿Cómo te sentiste?"
-                                            value={selectedEntry.journal}
-                                            onChange={(e) => handleEntryChange(selectedEntry.date, { journal: e.target.value })}
-                                            className="text-sm bg-background flex-grow resize-none"
-                                            rows={6}
-                                        />
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-muted-foreground">
-                                    <p>Selecciona un día.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+export interface ForumCategory {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdAt: Timestamp;
+}
 
+export interface ForumMessage {
+  id: string;
+  content: string;
+  timestamp: Timestamp;
+  userId: string;
+  userName: string;
+  userImage: string | null;
+  categoryId: string;
+}
 
-                    <div className="flex justify-end items-center mt-4 pt-4 border-t">
-                       <DeleteHabitDialog habitName={habit.name} onDelete={() => onDelete(habit.id)}>
-                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </DeleteHabitDialog>
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
-    );
+export interface FirestoreUser {
+  uid: string;
+  displayName: string;
+  email: string | null;
+  theme: 'light' | 'blue' | 'pink';
+  xp: number;
+  habits: FirestoreHabit[];
+  followedCategoryIds: string[];
+  role: 'user' | 'admin';
+  gender?: string;
+}
+
+export interface CategorySuggestion {
+  id: string;
+  name: string;
+  description: string;
+  requestedBy: string; // userId
+  requestedByName: string; // userName for display
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp;
 }
