@@ -3,16 +3,13 @@
 
 import type { Habit, HabitEntry } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
 import { DeleteHabitDialog } from '@/components/DeleteHabitDialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HabitEntryDisplay } from './HabitEntryDisplay';
 
-import { Flame, Trash2, PlusCircle, Star, ChevronDown, Circle } from 'lucide-react';
+import { Flame, Trash2, PlusCircle } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { calculateStreak } from '@/lib/utils';
-import { format, parseISO, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { parseISO, isSameDay } from 'date-fns';
 
 type HabitProgressProps = {
     habit: Habit;
@@ -37,31 +34,10 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
         }), 
     [entries]);
 
-    const [openEntries, setOpenEntries] = useState<string[]>([]);
-
-    useEffect(() => {
-        // Automatically open the latest entry when the component mounts or entries change
-        if (sortedEntries.length > 0) {
-            const latestEntryKey = `${sortedEntries[0].date}-${sortedEntries[0].isExtra ? 'extra' : 'main'}-${0}`;
-            if (!openEntries.includes(latestEntryKey)) {
-                setOpenEntries([latestEntryKey]);
-            }
-        }
-    }, [entries]); // Intentionally not including sortedEntries or openEntries to avoid loops
-
     const mainDayEntries = useMemo(() => entries.filter(e => !e.isExtra), [entries]);
     const dayCount = mainDayEntries.length;
     const progressPercentage = useMemo(() => (dayCount / duration) * 100, [dayCount, duration]);
     const streak = useMemo(() => calculateStreak(entries).count, [entries]);
-
-    const handleToggleOpen = (key: string) => {
-        setOpenEntries(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-    };
-
-    const handleSaveAndClose = (key: string, date: string, journal: string) => {
-        onUpdateEntry(habit.id, date, { journal, completed: true });
-        handleToggleOpen(key);
-    };
 
     return (
         <div className="border rounded-lg mb-4 shadow-sm p-4">
@@ -76,63 +52,25 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
                 </div>
                 <div className="text-sm">
                     <p>Día {dayCount}/{habit.duration}</p>
-                    <Progress value={progressPercentage} className="h-2 mt-1" />
+                    <div className="h-2 mt-1 bg-secondary rounded-full w-full">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+                    </div>
                 </div>
             </div>
             
             <p className="text-sm text-muted-foreground my-4">{habit.description}</p>
             
             <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                {sortedEntries.length > 0 ? sortedEntries.map((entry, index) => {
-                    const entryKey = `${entry.date}-${entry.isExtra ? 'extra' : 'main'}-${index}`;
-                    const isOpen = openEntries.includes(entryKey);
-                    const mainDayEntryIndex = mainDayEntries.findIndex(e => isSameDay(parseISO(e.date), parseISO(entry.date)));
-                    const dayNumber = mainDayEntries.length - mainDayEntryIndex;
-                    const [journalText, setJournalText] = useState(entry.journal || '');
-
-                    return (
-                        <div key={entryKey} className="p-3 rounded-md bg-muted/50">
-                            <div 
-                                className="flex items-center justify-between cursor-pointer" 
-                                onClick={() => handleToggleOpen(entryKey)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {entry.isExtra ? (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger><Star className="h-4 w-4 text-yellow-500"/></TooltipTrigger>
-                                                <TooltipContent><p>Entrada Extra</p></TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    ) : (
-                                        <h4 className="font-semibold flex items-center gap-2">
-                                            <Circle className={`h-3 w-3 ${entry.completed ? 'fill-green-500 text-green-500' : 'fill-muted-foreground text-muted-foreground'}`}/>
-                                            Día {dayNumber}
-                                        </h4>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">{format(parseISO(entry.date), "d 'de' MMMM", { locale: es })}</p>
-                                </div>
-                                <ChevronDown className={`h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            </div>
-
-                            {isOpen && (
-                                <div className="mt-3 space-y-2">
-                                    <Textarea
-                                        id={`journal-${entryKey}`}
-                                        placeholder="¿Qué aprendiste? ¿Cómo te sentiste?"
-                                        value={journalText}
-                                        onChange={(e) => setJournalText(e.target.value)}
-                                        className="text-sm bg-background resize-none"
-                                        rows={3}
-                                    />
-                                    <Button size="sm" onClick={() => handleSaveAndClose(entryKey, entry.date, journalText)}>
-                                        Guardar y Cerrar
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    )
-                }) : (
+                {sortedEntries.length > 0 ? sortedEntries.map((entry, index) => (
+                    <HabitEntryDisplay
+                        key={`${entry.date}-${entry.isExtra}-${index}`}
+                        entry={entry}
+                        index={index}
+                        habitId={habit.id}
+                        mainDayEntries={mainDayEntries}
+                        onUpdateEntry={onUpdateEntry}
+                    />
+                )) : (
                     <div className="text-center py-8 text-muted-foreground">
                         <p>¡Es hora de empezar!</p>
                         <p className="text-sm">Pulsa el botón de abajo para registrar tu primer día.</p>
