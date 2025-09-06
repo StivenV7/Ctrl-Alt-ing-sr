@@ -71,7 +71,7 @@ export function AIChatPanel({
   const initialMessage = !chatHistory || chatHistory.length === 0;
 
   return (
-    <Card className="shadow-lg sticky top-24">
+    <Card className="shadow-lg sticky top-24 flex flex-col max-h-[calc(100vh-8rem)]">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
@@ -79,8 +79,8 @@ export function AIChatPanel({
         </div>
         <CardDescription>Tu IA para crear hábitos.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="pr-4 max-h-[calc(100vh-24rem)]" ref={scrollAreaRef}>
+      <CardContent className="flex-grow overflow-hidden">
+        <ScrollArea className="h-full pr-4" ref={scrollAreaRef}>
            <div className="space-y-4">
             {initialMessage && (
                 <div className="p-4 text-center text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export function AIChatPanel({
            </div>
         </ScrollArea>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="mt-auto">
         <form onSubmit={handleFormSubmit} className="flex w-full items-end space-x-2">
           <Textarea
             ref={textareaRef}
