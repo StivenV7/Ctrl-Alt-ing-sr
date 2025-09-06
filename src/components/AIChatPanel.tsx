@@ -41,7 +41,7 @@ export function AIChatPanel({
   };
 
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
+     if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
         if (viewport) {
             viewport.scrollTop = viewport.scrollHeight;
@@ -71,7 +71,7 @@ export function AIChatPanel({
   const initialMessage = !chatHistory || chatHistory.length === 0;
 
   return (
-    <Card className="shadow-lg sticky top-24 flex flex-col max-h-[calc(100vh-8rem)]">
+    <Card className="shadow-lg sticky top-24">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
@@ -79,8 +79,8 @@ export function AIChatPanel({
         </div>
         <CardDescription>Tu IA para crear hábitos.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
-        <ScrollArea className="flex-grow pr-4" ref={scrollAreaRef}>
+      <CardContent>
+        <ScrollArea className="pr-4 max-h-[calc(100vh-24rem)]" ref={scrollAreaRef}>
            <div className="space-y-4">
             {initialMessage && (
                 <div className="p-4 text-center text-sm text-muted-foreground">
