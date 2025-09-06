@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Lightbulb, Loader2, Sparkles, Plus, Send } from 'lucide-react';
 import { ChatMessage, ChatOutput } from '@/lib/types';
@@ -23,6 +23,22 @@ export function AIChatPanel({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleFormSubmit(e);
+    }
+  };
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -37,13 +53,16 @@ export function AIChatPanel({
     scrollToBottom();
   }, [chatHistory]);
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent | React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
     setLoading(true);
     const messageToSend = input;
     setInput('');
+     if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+    }
     
     await onSubmit(messageToSend);
     setLoading(false);
@@ -114,17 +133,20 @@ export function AIChatPanel({
         </ScrollArea>
       </CardContent>
       <CardFooter>
-        <form onSubmit={handleFormSubmit} className="flex w-full items-center space-x-2">
-          <Input
+        <form onSubmit={handleFormSubmit} className="flex w-full items-end space-x-2">
+          <Textarea
+            ref={textareaRef}
             id="message"
             placeholder="Tu meta o pregunta..."
-            className="flex-1"
+            className="flex-1 resize-none overflow-y-hidden"
             autoComplete="off"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInput}
+            onKeyDown={handleKeyDown}
             disabled={loading}
+            rows={1}
           />
-          <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+          <Button type="submit" size="icon" disabled={loading || !input.trim()} className="self-end">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             <span className="sr-only">Enviar mensaje</span>
           </Button>
