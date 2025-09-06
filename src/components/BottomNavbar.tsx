@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, User } from 'lucide-react';
+import { Home, User, Menu as MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarHeader, SidebarNavContent } from './Sidebar';
@@ -37,8 +37,8 @@ export function BottomNavbar() {
         <Sheet>
           <SheetTrigger asChild>
             <div className="flex flex-col items-center justify-center gap-1 w-full text-sm font-medium transition-colors text-muted-foreground hover:text-primary h-full cursor-pointer">
-              <User className="h-6 w-6" />
-              <span>Perfil</span>
+              <MenuIcon className="h-6 w-6" />
+              <span>Menú</span>
             </div>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-72 flex flex-col">
