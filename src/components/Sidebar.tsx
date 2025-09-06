@@ -12,6 +12,20 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from './icons';
 import { SheetHeader, SheetTitle } from './ui/sheet';
 
+
+export function SidebarHeader() {
+    return (
+        <SheetHeader className="p-4 pb-4 border-b text-left">
+            <SheetTitle>
+                <div className="flex items-center gap-2">
+                    <Logo className="size-8 text-primary" />
+                    <span className="text-xl font-bold text-primary">Habitica</span>
+                </div>
+            </SheetTitle>
+        </SheetHeader>
+    )
+}
+
 const navItems = [
     { href: '/home', label: 'Inicio', icon: Home },
 ];
@@ -27,15 +41,7 @@ export function SidebarNavContent() {
   }, [userXp]);
 
   return (
-    <div className="flex h-full flex-col">
-        <SheetHeader className="p-4 pb-4 border-b text-left">
-            <SheetTitle>
-                <div className="flex items-center gap-2">
-                    <Logo className="size-8 text-primary" />
-                    <span className="text-xl font-bold text-primary">Habitica</span>
-                </div>
-            </SheetTitle>
-        </SheetHeader>
+    <div className="flex h-full flex-col overflow-y-auto">
         <nav className="flex flex-col gap-2 p-4">
             {navItems.map((item) => (
                  <Link key={item.href} href={item.href}>

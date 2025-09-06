@@ -3,7 +3,7 @@
 
 import { BottomNavbar } from '@/components/BottomNavbar';
 import { Header } from '@/components/Header';
-import { SidebarNavContent } from '@/components/Sidebar';
+import { SidebarHeader, SidebarNavContent } from '@/components/Sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -31,6 +31,7 @@ export default function MainLayout({
   return (
     <div className="flex h-screen">
       <aside className="hidden md:flex md:w-64 md:flex-col md:border-r">
+        <SidebarHeader />
         <SidebarNavContent />
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">

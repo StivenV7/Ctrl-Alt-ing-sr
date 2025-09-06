@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Home, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { SidebarNavContent } from './Sidebar';
+import { SidebarHeader, SidebarNavContent } from './Sidebar';
 
 const navItems = [
   { href: '/home', label: 'Inicio', icon: Home },
@@ -41,7 +41,8 @@ export function BottomNavbar() {
               <span>Perfil</span>
             </div>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72">
+          <SheetContent side="left" className="p-0 w-72 flex flex-col">
+            <SidebarHeader />
             <SidebarNavContent />
           </SheetContent>
         </Sheet>
