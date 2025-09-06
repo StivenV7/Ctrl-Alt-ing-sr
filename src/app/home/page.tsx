@@ -9,40 +9,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { format, isSameDay, parseISO, startOfDay } from 'date-fns';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-react';
-import { AddHabitDialog } from '@/components/AddHabitDialog';
-import { AIChatPanel } from '@/components/AIChatPanel';
-import { HabitProgress } from '@/components/HabitProgress';
-import { calculateStreak } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
-
-
-// Map stored habit IDs to Lucide icons
-const ICONS: { [key: string]: React.ElementType } = {
-  'habit-1': BookOpen,
-  'habit-2': Dumbbell,
-  'habit-3': HeartPulse,
-};
-
-const getIconForHabit = (habitId: string) => {
-  return ICONS[habitId] || TrendingUp;
-};
-
-
-export default function HomePage() {
-  const [habits, setHabits] = useState<Habit.tsx
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useToast } from "@/hooks/use-toast"
-import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from '@/lib/types';
-import { chat } from '@/ai/flows/chat-flow';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from '@/lib/firebase';
 import { format, startOfDay, isSameDay, parseISO } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +17,6 @@ import { PlusCircle, BookOpen, Dumbbell, HeartPulse, TrendingUp } from 'lucide-r
 import { AddHabitDialog } from '@/components/AddHabitDialog';
 import { AIChatPanel } from '@/components/AIChatPanel';
 import { HabitProgress } from '@/components/HabitProgress';
-import { calculateStreak } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 
