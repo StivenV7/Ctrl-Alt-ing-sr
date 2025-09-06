@@ -7,7 +7,7 @@ import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from 
 import { chat } from '@/ai/flows/chat-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { format, startOfDay, isSameDay, parseISO } from 'date-fns';
 
@@ -46,13 +46,12 @@ export default function HomePage() {
 
   const loadUserData = useCallback(async () => {
     if (!userRef) return;
-    // The userDoc is now provided by the AuthContext, which uses onSnapshot for real-time updates.
     if (userDoc?.exists()) {
         try {
             const userData = userDoc.data();
             const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit) => ({
                 ...habit,
-                entries: habit.entries || [], // Ensure entries is always an array
+                entries: habit.entries || [],
                 icon: getIconForHabit(habit.id),
             }));
             setHabits(loadedHabits);
@@ -60,28 +59,37 @@ export default function HomePage() {
             console.error("Error processing user data:", error);
         }
     }
-    setIsDataLoaded(true); // Data is loaded (or doesn't exist)
+    setIsDataLoaded(true);
 }, [userRef, userDoc]);
   
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
-    } else if (user && !isDataLoaded) {
+    } else if (user && userDoc && !isDataLoaded) {
       loadUserData();
+    } else if (!userDoc && !authLoading) {
+      setIsDataLoaded(true); // Handle case for new users with no doc yet
     }
-  }, [user, authLoading, router, isDataLoaded, loadUserData]);
+  }, [user, userDoc, authLoading, router, isDataLoaded, loadUserData]);
 
-  const saveData = useCallback(async (newHabits: Habit[], newXp?: number) => {
-    if (!userRef) return;
+
+  const saveData = useCallback(async (updatedHabits: Habit[], xpGained = 0) => {
+    if (!userRef || !userDoc) return;
     try {
-        const dataToSave: { habits: FirestoreHabit[], xp?: number } = {
-            habits: newHabits.map(({ icon, ...rest }) => rest),
-        };
-        if(newXp !== undefined) {
-          const currentXp = userDoc?.data()?.xp || 0;
-          dataToSave.xp = currentXp + newXp;
-        }
-      await setDoc(userRef, dataToSave, { merge: true });
+      const dataToSave: { habits: FirestoreHabit[] } = {
+        habits: updatedHabits.map(({ icon, ...rest }) => rest),
+      };
+
+      if (xpGained > 0) {
+        const currentXp = userDoc.data()?.xp || 0;
+        await updateDoc(userRef, {
+            ...dataToSave,
+            xp: currentXp + xpGained
+        });
+      } else {
+        // Use setDoc with merge to avoid overwriting other user fields
+        await setDoc(userRef, dataToSave, { merge: true });
+      }
     } catch (error) {
       console.error("Error saving data:", error);
       toast({
@@ -97,16 +105,15 @@ export default function HomePage() {
     let xpChange = 0;
     const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
-            const entryToUpdate = h.entries.find(e => e.date === entryDate && !e.isExtra);
-            const oldCompleted = entryToUpdate?.completed;
+            const oldEntry = h.entries.find(e => e.date === entryDate);
+            const oldCompleted = oldEntry?.completed;
 
             const updatedEntries = h.entries.map(e => e.date === entryDate ? { ...e, ...newValues } : e);
-            const newCompleted = updatedEntries.find(e => e.date === entryDate && !e.isExtra)?.completed;
+            const newCompleted = updatedEntries.find(e => e.date === entryDate)?.completed;
 
-            if (newCompleted && !oldCompleted) {
+            // Grant XP only if it's a main entry being completed for the first time
+            if (newCompleted && !oldCompleted && !oldEntry?.isExtra) {
                 xpChange = 1;
-            } else if (!newCompleted && oldCompleted) {
-                xpChange = -1;
             }
             return { ...h, entries: updatedEntries };
         }
@@ -119,42 +126,31 @@ export default function HomePage() {
   
   const handleAddNewEntry = (habitId: string) => {
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
-    let habitModified = false;
-    let toastTitle = '';
-    let toastDescription = '';
   
     const updatedHabits = habits.map(h => {
       if (h.id === habitId) {
-        // Create a new copy of entries to avoid mutation
         let newEntries = [...h.entries];
         const mainEntries = newEntries.filter(e => !e.isExtra);
         const lastMainEntry = mainEntries.length > 0 ? mainEntries.sort((a, b) => b.date.localeCompare(a.date))[0] : null;
-  
+
+        let newEntry: HabitEntry;
         if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {
-          const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
-          newEntries.push(newEntry);
-          habitModified = true;
-          toastTitle = `¡Nuevo día, nuevo reto!`;
-          toastDescription = 'Has registrado tu avance para hoy.';
+          // It's a new day, add a main entry
+          newEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
+          toast({ title: `¡Nuevo día, nuevo reto!`, description: 'Has registrado tu avance para hoy.' });
         } else {
-          const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
-          newEntries.push(newEntry);
-          habitModified = true;
-          toastTitle = '¡Imparable!';
-          toastDescription = 'Has añadido una entrada extra para hoy.';
+          // It's the same day, add an extra entry
+          newEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
+          toast({ title: '¡Imparable!', description: 'Has añadido una entrada extra para hoy.' });
         }
+        newEntries.push(newEntry);
         return { ...h, entries: newEntries };
       }
       return h;
     });
   
-    if (habitModified) {
-      setHabits(updatedHabits);
-      toast({ title: toastTitle, description: toastDescription });
-      saveData(updatedHabits);
-    } else {
-      toast({ title: 'Ya registraste hoy', description: 'Puedes añadir una entrada extra si quieres.', variant: 'default' });
-    }
+    setHabits(updatedHabits);
+    saveData(updatedHabits); // Save the changes to Firestore
   };
 
   const handleAddHabit = (name: string, category: string, description: string, duration: number) => {
@@ -170,7 +166,7 @@ export default function HomePage() {
     const updatedHabits = [...habits, newHabit];
     setHabits(updatedHabits);
     saveData(updatedHabits);
-    setNewlyAddedHabitId(newHabit.id); // Track the new habit
+    setNewlyAddedHabitId(newHabit.id);
     toast({
       title: "Reto añadido",
       description: `¡Empezaste el reto "${name}"!`,
@@ -199,7 +195,6 @@ export default function HomePage() {
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.answer, suggestions: result.suggestions };
       const finalHistory = [...newHistory, assistantMessage];
       setChatHistory(finalHistory);
-      // Chat history is ephemeral and not saved to Firestore
       
       return result;
     } catch (error) {
@@ -216,7 +211,7 @@ export default function HomePage() {
   };
 
 
-  if (authLoading || !user || !isDataLoaded) {
+  if (authLoading || !isDataLoaded) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   }
 
