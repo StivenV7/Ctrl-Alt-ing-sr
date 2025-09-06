@@ -129,7 +129,7 @@ export default function HomePage() {
     const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
             const mainEntries = h.entries.filter(e => !e.isExtra);
-            const lastMainEntry = mainEntries.length > 0 ? mainEntries[mainEntries.length - 1] : null;
+            const lastMainEntry = mainEntries.length > 0 ? mainEntries.sort((a, b) => b.date.localeCompare(a.date))[0] : null;
 
             // Check if we can add a new entry for today
             if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {

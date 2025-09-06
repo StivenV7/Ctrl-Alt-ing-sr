@@ -29,8 +29,13 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
     // Entries sorted with main entries first, then by date descending
     const sortedEntries = useMemo(() => 
         [...entries].sort((a, b) => {
-            const dateComparison = b.date.localeCompare(a.date);
-            if (dateComparison !== 0) return dateComparison;
+            const dateA = parseISO(a.date);
+            const dateB = parseISO(b.date);
+            
+            if (!isSameDay(dateA, dateB)) {
+                return dateB.getTime() - dateA.getTime();
+            }
+            
             // if dates are same, non-extras come first
             return (a.isExtra ? 1 : 0) - (b.isExtra ? 1 : 0);
         }), 
@@ -42,11 +47,14 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
     const progressPercentage = useMemo(() => (dayCount / duration) * 100, [dayCount, duration]);
     const streak = useMemo(() => calculateStreak(entries).count, [entries]);
 
-    const handleJournalChange = (date: string, value: string) => {
+    const handleJournalChange = (date: string, isExtra: boolean | undefined, index: number, value: string) => {
+        // We need a more robust way to identify the entry
+        // For now, let's stick to the original plan, but this is a fragile point.
+        // A unique ID per entry would be better.
         onUpdateEntry(habit.id, date, { journal: value });
     };
 
-    const handleCompletionChange = (date: string, checked: boolean) => {
+    const handleCompletionChange = (date: string, isExtra: boolean | undefined, index: number, checked: boolean) => {
         onUpdateEntry(habit.id, date, { completed: checked });
     };
 
@@ -74,7 +82,8 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
                     
                     <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                         {sortedEntries.length > 0 ? sortedEntries.map((entry, index) => {
-                             const dayNumber = mainDayEntries.length - mainDayEntries.findIndex(e => e.date === entry.date);
+                             const mainDayEntryIndex = mainDayEntries.findIndex(e => isSameDay(parseISO(e.date), parseISO(entry.date)));
+                             const dayNumber = mainDayEntries.length - mainDayEntryIndex;
                              return (
                                 <div key={`${entry.date}-${index}`} className="p-3 rounded-md bg-muted/50">
                                     <div className="flex items-center justify-between">
@@ -95,7 +104,7 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
                                             <Checkbox
                                                 id={`check-${habit.id}-${entry.date}-${index}`}
                                                 checked={entry.completed}
-                                                onCheckedChange={(checked) => handleCompletionChange(entry.date, !!checked)}
+                                                onCheckedChange={(checked) => handleCompletionChange(entry.date, entry.isExtra, index, !!checked)}
                                             />
                                             <label htmlFor={`check-${habit.id}-${entry.date}-${index}`} className='text-sm'>Completado</label>
                                         </div>
@@ -103,8 +112,8 @@ export function HabitProgress({ habit, onAddNewEntry, onUpdateEntry, onDelete }:
                                     <Textarea
                                         id={`journal-${habit.id}-${entry.date}-${index}`}
                                         placeholder="¿Qué aprendiste? ¿Cómo te sentiste?"
-                                        value={entry.journal}
-                                        onChange={(e) => handleJournalChange(entry.date, e.target.value)}
+                                        defaultValue={entry.journal}
+                                        onBlur={(e) => handleJournalChange(entry.date, entry.isExtra, index, e.target.value)}
                                         className="text-sm bg-background mt-2 resize-none"
                                         rows={2}
                                     />
