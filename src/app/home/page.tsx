@@ -35,39 +35,33 @@ const getIconForHabit = (habitId: string) => {
 export default function HomePage() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [userXp, setUserXp] = useState(0);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, userDoc, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const [newlyAddedHabitId, setNewlyAddedHabitId] = useState<string | null>(null);
+
   
   const userRef = useMemo(() => user ? doc(db, "users", user.uid) : null, [user]);
 
   const loadUserData = useCallback(async () => {
     if (!userRef) return;
-    try {
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit) => ({
-          ...habit,
-          entries: habit.entries || [], // Ensure entries is always an array
-          icon: getIconForHabit(habit.id),
-        }));
-        setHabits(loadedHabits);
-        setUserXp(userData.xp || 0);
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudieron cargar tus datos.",
-      });
-    } finally {
-      setIsDataLoaded(true);
+    // The userDoc is now provided by the AuthContext, which uses onSnapshot for real-time updates.
+    if (userDoc?.exists()) {
+        try {
+            const userData = userDoc.data();
+            const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit) => ({
+                ...habit,
+                entries: habit.entries || [], // Ensure entries is always an array
+                icon: getIconForHabit(habit.id),
+            }));
+            setHabits(loadedHabits);
+        } catch (error) {
+            console.error("Error processing user data:", error);
+        }
     }
-  }, [userRef, toast]);
+    setIsDataLoaded(true); // Data is loaded (or doesn't exist)
+}, [userRef, userDoc]);
   
   useEffect(() => {
     if (!authLoading && !user) {
@@ -77,9 +71,16 @@ export default function HomePage() {
     }
   }, [user, authLoading, router, isDataLoaded, loadUserData]);
 
-  const saveData = useCallback(async (dataToSave: { [key: string]: any }) => {
+  const saveData = useCallback(async (newHabits: Habit[], newXp?: number) => {
     if (!userRef) return;
     try {
+        const dataToSave: { habits: FirestoreHabit[], xp?: number } = {
+            habits: newHabits.map(({ icon, ...rest }) => rest),
+        };
+        if(newXp !== undefined) {
+          const currentXp = userDoc?.data()?.xp || 0;
+          dataToSave.xp = currentXp + newXp;
+        }
       await setDoc(userRef, dataToSave, { merge: true });
     } catch (error) {
       console.error("Error saving data:", error);
@@ -89,37 +90,31 @@ export default function HomePage() {
         description: "No se pudo guardar tu progreso.",
       });
     }
-  }, [userRef, toast]);
+  }, [userRef, userDoc, toast]);
+
 
   const handleUpdateEntry = (habitId: string, entryDate: string, newValues: Partial<HabitEntry>) => {
-     let newXp = userXp;
-     const updatedHabits = habits.map(h => {
+    let xpChange = 0;
+    const updatedHabits = habits.map(h => {
         if (h.id === habitId) {
             const entryToUpdate = h.entries.find(e => e.date === entryDate && !e.isExtra);
             const oldCompleted = entryToUpdate?.completed;
 
             const updatedEntries = h.entries.map(e => e.date === entryDate ? { ...e, ...newValues } : e);
-
             const newCompleted = updatedEntries.find(e => e.date === entryDate && !e.isExtra)?.completed;
 
             if (newCompleted && !oldCompleted) {
-                newXp += 1;
+                xpChange = 1;
             } else if (!newCompleted && oldCompleted) {
-                newXp -= 1;
+                xpChange = -1;
             }
-
             return { ...h, entries: updatedEntries };
         }
         return h;
     });
 
     setHabits(updatedHabits);
-    if(newXp !== userXp) {
-      setUserXp(newXp);
-    }
-
-    const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
-    saveData({ habits: habitsToSave, xp: newXp });
+    saveData(updatedHabits, xpChange);
   };
   
   const handleAddNewEntry = (habitId: string) => {
@@ -131,26 +126,23 @@ export default function HomePage() {
     const updatedHabits = habits.map(h => {
       if (h.id === habitId) {
         // Create a new copy of entries to avoid mutation
-        const newEntries = [...h.entries];
+        let newEntries = [...h.entries];
         const mainEntries = newEntries.filter(e => !e.isExtra);
         const lastMainEntry = mainEntries.length > 0 ? mainEntries.sort((a, b) => b.date.localeCompare(a.date))[0] : null;
   
         if (!lastMainEntry || !isSameDay(parseISO(lastMainEntry.date), parseISO(todayStr))) {
-          // Add a new main entry for a new day
           const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: false };
           newEntries.push(newEntry);
           habitModified = true;
           toastTitle = `¡Nuevo día, nuevo reto!`;
           toastDescription = 'Has registrado tu avance para hoy.';
         } else {
-          // Add an extra entry for the same day
           const newEntry: HabitEntry = { date: todayStr, completed: false, journal: '', isExtra: true };
           newEntries.push(newEntry);
           habitModified = true;
           toastTitle = '¡Imparable!';
           toastDescription = 'Has añadido una entrada extra para hoy.';
         }
-        // Return a new habit object with the new entries array
         return { ...h, entries: newEntries };
       }
       return h;
@@ -159,8 +151,7 @@ export default function HomePage() {
     if (habitModified) {
       setHabits(updatedHabits);
       toast({ title: toastTitle, description: toastDescription });
-      const habitsToSave = updatedHabits.map(({ icon, ...rest }) => rest);
-      saveData({ habits: habitsToSave });
+      saveData(updatedHabits);
     } else {
       toast({ title: 'Ya registraste hoy', description: 'Puedes añadir una entrada extra si quieres.', variant: 'default' });
     }
@@ -178,8 +169,8 @@ export default function HomePage() {
     };
     const updatedHabits = [...habits, newHabit];
     setHabits(updatedHabits);
-    const { icon, ...habitToSave } = newHabit;
-    saveData({ habits: [...habits.map(({icon, ...rest}) => rest), habitToSave] });
+    saveData(updatedHabits);
+    setNewlyAddedHabitId(newHabit.id); // Track the new habit
     toast({
       title: "Reto añadido",
       description: `¡Empezaste el reto "${name}"!`,
@@ -189,7 +180,7 @@ export default function HomePage() {
   const handleDeleteHabit = (habitId: string) => {
     const updatedHabits = habits.filter(habit => habit.id !== habitId);
     setHabits(updatedHabits);
-    saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest) });
+    saveData(updatedHabits);
     toast({
       title: "Reto eliminado",
       description: "El reto ha sido eliminado de tu lista.",
@@ -251,6 +242,7 @@ export default function HomePage() {
                     onAddNewEntry={handleAddNewEntry}
                     onUpdateEntry={handleUpdateEntry}
                     onDelete={handleDeleteHabit}
+                    isNewlyAdded={habit.id === newlyAddedHabitId}
                 />
                 )) : (
                 <div className="text-center py-12 text-muted-foreground">
