@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut } from 'lucide-react';
+import { Home, LogOut, MessageCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
@@ -51,6 +51,12 @@ export function SidebarNavContent() {
                     </Button>
                  </Link>
             ))}
+             <a href="https://chat.whatsapp.com/BHhcW7kOWKxApJOyu9nyNm" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" className="w-full justify-start">
+                    <MessageCircle className="size-4 mr-2" />
+                    <span>Comunidad WhatsApp</span>
+                </Button>
+             </a>
         </nav>
         <div className="mt-auto flex flex-col gap-2 border-t p-4">
             {user && (
