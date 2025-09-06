@@ -71,7 +71,7 @@ export function AIChatPanel({
   const initialMessage = !chatHistory || chatHistory.length === 0;
 
   return (
-    <Card className="shadow-lg sticky top-24 flex flex-col max-h-[calc(100vh-8rem)]">
+    <Card className="shadow-lg sticky top-24 flex flex-col h-auto max-h-screen">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
