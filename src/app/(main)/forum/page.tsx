@@ -111,7 +111,7 @@ export default function ForumHomePage() {
         status: 'pending',
         createdAt: serverTimestamp(),
       });
-      toast({ title: 'Sugerencia Enviada', description: 'Tu sugerencia de comunidad ha sido enviada para revisión.' });
+      toast({ title: 'Sugerencia Enviada', description: 'Tu sugerencia ha sido enviada para revisión.' });
     } catch (error) {
       console.error("Error suggesting category:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar tu sugerencia.' });
@@ -144,7 +144,7 @@ export default function ForumHomePage() {
                         <Users className="h-6 w-6 text-primary" />
                         <CardTitle className="font-headline">Explorar Comunidades</CardTitle>
                     </div>
-                    <CardDescription className="mt-1">Únete a las conversaciones que te interesan.</CardDescription>
+                    <CardDescription className="mt-1">Únete a conversaciones que te interesan.</CardDescription>
                 </div>
                 <AddCategoryDialog 
                     onCreate={isAdmin ? handleCreateCategory : handleSuggestCategory}

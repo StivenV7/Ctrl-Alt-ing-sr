@@ -7,18 +7,18 @@ import { CheckCircle, Star, Users } from 'lucide-react';
 const features = [
   {
     icon: <CheckCircle className="h-8 w-8 text-primary" />,
-    title: 'Crea y Sigue Retos',
-    description: 'Define tus propios retos de hábitos con duraciones personalizadas, desde 7 hasta 90 días. Sigue tu progreso día a día en un calendario interactivo y anota tus experiencias.',
+    title: 'Retos a tu Medida',
+    description: 'Define retos con duración personalizada y sigue tu progreso en un calendario interactivo.',
   },
   {
     icon: <Star className="h-8 w-8 text-primary" />,
-    title: 'Gamificación Motivadora',
-    description: 'Gana puntos de experiencia (XP) por cada día que completas. Sube de rango, desde Novato hasta Gran Maestro, y observa cómo crecen tus rachas de días consecutivos.',
+    title: 'Sube de Nivel',
+    description: 'Gana XP por cada día completado, sube de rango y mantén tus rachas de días consecutivos.',
   },
   {
     icon: <Users className="h-8 w-8 text-primary" />,
-    title: 'Coach de IA Personal',
-    description: 'Conversa con nuestro coach de IA para obtener orientación y sugerencias de retos personalizadas. La IA te ayudará a definir metas claras y a mantener la motivación alta.',
+    title: 'Tu Coach IA',
+    description: 'Chatea con tu coach de IA para obtener orientación y retos personalizados que te mantengan motivado.',
   },
 ];
 
@@ -29,7 +29,7 @@ export function FeaturesSection() {
         <div className="text-center">
           <h2 className="text-3xl font-bold">¿Por qué Habitica?</h2>
           <p className="mt-2 text-muted-foreground">
-            Fusionamos la ciencia de la formación de hábitos con la diversión de un juego. Aquí tienes todo lo que necesitas para construir la mejor versión de ti mismo.
+            Fusionamos la ciencia de los hábitos con la diversión de un juego para que construyas tu mejor versión.
               <br />
             <em className="text-sm text-primary">Att: Josué Sinisterra</em>
           </p>

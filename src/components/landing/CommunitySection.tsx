@@ -11,7 +11,7 @@ export function CommunitySection() {
         <div className="text-center">
           <h2 className="text-3xl font-bold">Más Allá de los Hábitos</h2>
           <p className="mt-2 text-muted-foreground">
-            El crecimiento personal es un viaje que se disfruta más en compañía. Habitica es también un lugar para conectar, compartir y encontrar inspiración.
+            Crecer es mejor en compañía. Conecta, comparte y encuentra inspiración en nuestras comunidades.
             <br />
             <em className="text-sm text-primary">Att: Kevin Quintero</em>
           </p>
@@ -25,7 +25,7 @@ export function CommunitySection() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">¿Te apasiona la lectura, el fitness o las finanzas? Únete a nuestros foros temáticos para discutir sobre tus intereses, comparte consejos prácticos, haz preguntas y encuentra compañeros de viaje que te entiendan y te animen.</p>
+              <p className="text-muted-foreground">Únete a foros temáticos sobre lectura, fitness, finanzas y más. Comparte consejos, haz preguntas y encuentra compañeros de viaje.</p>
             </CardContent>
           </Card>
         </div>

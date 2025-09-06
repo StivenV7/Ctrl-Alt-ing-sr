@@ -12,7 +12,7 @@ export function HowItWorksSection() {
           <div>
             <h2 className="text-3xl font-bold">Simple, Intuitivo y Poderoso</h2>
             <p className="mt-4 text-muted-foreground">
-              Comienza tu viaje de superación en tres sencillos pasos. Nuestra plataforma está diseñada para que te concentres en lo que realmente importa: tu progreso. Olvídate de las complicaciones y enfócate en la acción.
+              Comienza tu viaje en tres sencillos pasos. Nuestra plataforma está diseñada para que te enfoques en lo que importa: tu progreso.
               <br />
               <em className="text-sm text-primary">Att: Oscar Valle</em>
             </p>
@@ -20,22 +20,22 @@ export function HowItWorksSection() {
               <li className="flex items-start">
                 <CheckCircle className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-primary" />
                 <div>
-                  <h3 className="font-semibold">1. Elige o crea un reto</h3>
-                  <p className="text-muted-foreground">Selecciona de nuestra lista de retos predefinidos o conversa con la IA para que diseñe un plan personalizado que se adapte perfectamente a tus metas y estilo de vida.</p>
+                  <h3 className="font-semibold">1. Elige tu Reto</h3>
+                  <p className="text-muted-foreground">Selecciona un reto o crea uno con ayuda de la IA para que se adapte a tus metas.</p>
                 </div>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-primary" />
                 <div>
-                  <h3 className="font-semibold">2. Registra tu progreso diario</h3>
-                  <p className="text-muted-foreground">Con un solo clic, marca tus tareas completadas en el calendario. Además, puedes usar el diario incorporado para anotar tus pensamientos, sentimientos y aprendizajes.</p>
+                  <h3 className="font-semibold">2. Registra tu Avance</h3>
+                  <p className="text-muted-foreground">Con un clic, marca tus tareas completadas y anota tus experiencias en el diario.</p>
                 </div>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="mr-3 mt-1 h-6 w-6 flex-shrink-0 text-primary" />
                 <div>
-                  <h3 className="font-semibold">3. Sube de nivel y conecta</h3>
-                  <p className="text-muted-foreground">Observa cómo crecen tu XP y tus rachas de fuego con cada día de éxito. Únete a las comunidades del foro para compartir tu viaje, encontrar apoyo y motivar a otros.</p>
+                  <h3 className="font-semibold">3. Gana y Conecta</h3>
+                  <p className="text-muted-foreground">Observa cómo crecen tu XP y rachas. Únete a los foros para compartir tu viaje.</p>
                 </div>
               </li>
             </ul>

@@ -56,17 +56,17 @@ export function AIChatPanel({
       <CardHeader>
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary" />
-          <CardTitle className="font-headline">Coach de Hábitos IA</CardTitle>
+          <CardTitle className="font-headline">Coach IA</CardTitle>
         </div>
-        <CardDescription>Chatea con la IA para crear tu plan de hábitos.</CardDescription>
+        <CardDescription>Tu IA para crear hábitos.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
         <ScrollArea className="flex-grow pr-4" ref={scrollAreaRef}>
            <div className="space-y-4">
             {initialMessage && (
                 <div className="p-4 text-center text-sm text-muted-foreground">
-                    <p>Soy tu coach personal de IA. ¿Qué metas tienes en mente?</p>
-                    <p className="text-xs mt-2">Por ejemplo: "Quiero leer más" o "Necesito ayuda para ser más activo".</p>
+                    <p>Soy tu coach IA. ¿Qué quieres lograr?</p>
+                    <p className="text-xs mt-2">Ej: "Quiero leer más" o "necesito ser más activo".</p>
                 </div>
             )}
             {chatHistory.map((msg, index) => (
@@ -117,7 +117,7 @@ export function AIChatPanel({
         <form onSubmit={handleFormSubmit} className="flex w-full items-center space-x-2">
           <Input
             id="message"
-            placeholder="Escribe tu meta o pregunta..."
+            placeholder="Tu meta o pregunta..."
             className="flex-1"
             autoComplete="off"
             value={input}

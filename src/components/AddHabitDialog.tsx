@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -54,8 +55,8 @@ export function AddHabitDialog({ children, onAddHabit }: AddHabitDialogProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Reto</DialogTitle>
-          <DialogDescription>Define un nuevo reto para seguir. ¡Un paso a la vez!</DialogDescription>
+          <DialogTitle>Nuevo Reto</DialogTitle>
+          <DialogDescription>Define tu próximo gran hábito.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -66,7 +67,7 @@ export function AddHabitDialog({ children, onAddHabit }: AddHabitDialogProps) {
                 <FormItem>
                   <FormLabel>Nombre del Reto</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: Leer 'Hábitos Atómicos'" {...field} />
+                    <Input placeholder="Ej: Leer un libro" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -79,7 +80,7 @@ export function AddHabitDialog({ children, onAddHabit }: AddHabitDialogProps) {
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ej: Leer 10 páginas diarias para terminarlo en un mes." {...field} />
+                    <Textarea placeholder="Ej: Leer 10 páginas diarias." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -103,7 +104,7 @@ export function AddHabitDialog({ children, onAddHabit }: AddHabitDialogProps) {
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duración (en días)</FormLabel>
+                  <FormLabel>Duración (días)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="Ej: 30" {...field} />
                   </FormControl>

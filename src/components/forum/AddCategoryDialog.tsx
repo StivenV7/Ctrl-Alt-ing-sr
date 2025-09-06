@@ -46,11 +46,11 @@ export function AddCategoryDialog({ children, onCreate, isAdmin }: AddCategoryDi
     setIsOpen(false);
   };
 
-  const title = isAdmin ? 'Crear Nueva Comunidad' : 'Sugerir una Comunidad';
+  const title = isAdmin ? 'Crear Comunidad' : 'Sugerir Comunidad';
   const description = isAdmin 
-    ? 'Inicia una nueva conversación sobre un tema que te apasione.'
-    : 'Tu sugerencia será revisada por un administrador antes de ser creada.';
-  const buttonText = isAdmin ? 'Crear Comunidad' : 'Enviar Sugerencia';
+    ? 'Crea un nuevo espacio de conversación.'
+    : 'Tu sugerencia será revisada por un admin.';
+  const buttonText = isAdmin ? 'Crear' : 'Sugerir';
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -82,7 +82,7 @@ export function AddCategoryDialog({ children, onCreate, isAdmin }: AddCategoryDi
                 <FormItem>
                   <FormLabel>Descripción Breve</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ej: Un lugar para hablar de libros y compartir recomendaciones." {...field} />
+                    <Textarea placeholder="Ej: Un lugar para hablar de libros y recomendaciones." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

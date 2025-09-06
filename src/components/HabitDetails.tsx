@@ -63,7 +63,7 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
             entry.date === date ? { ...entry, ...newValues } : entry
         );
         setEntries(updatedEntries);
-        // Instant feedback, will be saved on accordion close
+        onUpdate(habit.id, updatedEntries); // Update instantly
     };
 
 
@@ -123,7 +123,7 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
                                                     </TooltipTrigger>
                                                     {hasJournal && (
                                                         <TooltipContent>
-                                                            <p className="font-bold">Experiencia:</p>
+                                                            <p className="font-bold">Tu Experiencia:</p>
                                                             <p className="max-w-xs">{entries.find(e => isSameDay(parseISO(e.date), date))?.journal}</p>
                                                         </TooltipContent>
                                                     )}
@@ -150,7 +150,7 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
                                         </div>
                                     </div>
                                     <div className="flex-grow flex flex-col gap-2">
-                                        <label htmlFor={`journal-${habit.id}-${selectedEntry.date}`} className="flex items-center gap-2 font-medium text-sm"><BookText className="h-4 w-4"/> Mi Experiencia del Día</label>
+                                        <label htmlFor={`journal-${habit.id}-${selectedEntry.date}`} className="flex items-center gap-2 font-medium text-sm"><BookText className="h-4 w-4"/> Tu Experiencia</label>
                                         <Textarea
                                             id={`journal-${habit.id}-${selectedEntry.date}`}
                                             placeholder="¿Qué aprendiste? ¿Cómo te sentiste?"
@@ -163,7 +163,7 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
                                 </>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                                    <p>Selecciona un día para ver los detalles.</p>
+                                    <p>Selecciona un día.</p>
                                 </div>
                             )}
                         </div>
@@ -182,5 +182,3 @@ export function HabitDetails({ habit, onUpdate, onDelete }: HabitDetailsProps) {
         </Accordion>
     );
 }
-
-    

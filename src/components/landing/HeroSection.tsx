@@ -10,10 +10,10 @@ export function HeroSection() {
       <div className="container mx-auto px-4 text-center">
         <div className="absolute inset-0 -z-10 bg-grid-pattern opacity-5"></div>
         <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">
-          Transforma tu Vida, <span className="text-primary">un Hábito a la Vez.</span>
+          Tus Metas, a un <span className="text-primary">Hábito de Distancia.</span>
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-          Habitica es tu compañero gamificado para construir hábitos duraderos. Gana XP, sube de nivel y alcanza tus metas con la ayuda de un coach de IA personalizado. Deja de procrastinar y empieza a construir la vida que deseas, un reto a la vez.
+          Usa la gamificación para construir hábitos duraderos. Gana XP, sube de nivel y alcanza tus metas con tu coach de IA. Empieza a construir la vida que deseas.
           <br />
           <em className="text-sm text-primary">Atte: Harry Gongora</em>
         </p>

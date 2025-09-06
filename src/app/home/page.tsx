@@ -88,7 +88,7 @@ export default function HomePage() {
       toast({
         variant: "destructive",
         title: "Error de guardado",
-        description: "No se pudo guardar tu progreso. Revisa tu conexión.",
+        description: "No se pudo guardar tu progreso.",
       });
     }
   }, [userRef, toast]);
@@ -150,8 +150,8 @@ export default function HomePage() {
     const { icon, ...habitToSave } = newHabit;
     saveData({ habits: [...habits.map(({icon, ...rest}) => rest), habitToSave] });
     toast({
-      title: "Hábito añadido",
-      description: `Has añadido "${name}" a tu lista.`,
+      title: "Reto añadido",
+      description: `¡Empezaste el reto "${name}"!`,
     })
   };
 
@@ -160,8 +160,8 @@ export default function HomePage() {
     setHabits(updatedHabits);
     saveData({ habits: updatedHabits.map(({icon, ...rest}) => rest) });
     toast({
-      title: "Hábito eliminado",
-      description: "El hábito ha sido eliminado de tu lista.",
+      title: "Reto eliminado",
+      description: "El reto ha sido eliminado de tu lista.",
     });
   };
   
@@ -182,12 +182,12 @@ export default function HomePage() {
       return result;
     } catch (error) {
       console.error("Error getting AI response:", error);
-      const errMessage: ChatMessage = { role: 'assistant', content: "Lo siento, tuve un problema para responder. Inténtalo de nuevo." };
+      const errMessage: ChatMessage = { role: 'assistant', content: "Lo siento, tuve un problema. Inténtalo de nuevo." };
       setChatHistory([...newHistory, errMessage]);
       toast({
         variant: "destructive",
         title: "Error de IA",
-        description: "No se pudo obtener respuesta. Inténtalo de nuevo.",
+        description: "No se pudo obtener respuesta del coach.",
       });
       throw error; // Re-throw to be caught by the caller if needed
     }
@@ -222,8 +222,8 @@ export default function HomePage() {
                 />
                 )) : (
                 <div className="text-center py-12 text-muted-foreground">
-                    <p>No tienes retos todavía.</p>
-                    <p>¡Añade uno para empezar!</p>
+                    <p>Aún no tienes retos.</p>
+                    <p>¡Añade uno y empieza a ganar XP!</p>
                 </div>
                 )}
             </div>

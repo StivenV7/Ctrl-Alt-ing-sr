@@ -131,7 +131,7 @@ export default function AdminPage() {
                     <CardTitle>Acceso Denegado</CardTitle>
                 </CardHeader>
                 <CardContent className="mt-4 space-y-4">
-                    <p>No tienes permisos para acceder a esta página.</p>
+                    <p>No tienes permisos para acceder aquí.</p>
                     <Button asChild>
                         <a href="/">Volver al inicio</a>
                     </Button>
@@ -148,7 +148,7 @@ export default function AdminPage() {
       <Card>
           <CardHeader>
               <CardTitle>Panel de Administración</CardTitle>
-              <CardDescription>Gestiona los usuarios, comunidades y sugerencias de la aplicación.</CardDescription>
+              <CardDescription>Gestiona usuarios, comunidades y sugerencias.</CardDescription>
           </CardHeader>
       </Card>
       
@@ -163,7 +163,7 @@ export default function AdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Hourglass className="h-5 w-5"/>Sugerencias Pendientes</CardTitle>
-                    <CardDescription>Aprueba o rechaza las nuevas comunidades sugeridas por los usuarios.</CardDescription>
+                    <CardDescription>Aprueba o rechaza nuevas comunidades.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {pendingSuggestions.length > 0 ? (
@@ -191,7 +191,7 @@ export default function AdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><User className="h-5 w-5"/>Gestión de Usuarios</CardTitle>
-                    <CardDescription>Lista de todos los usuarios registrados en la aplicación.</CardDescription>
+                    <CardDescription>Lista de todos los usuarios registrados.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {users.map(u => (
@@ -210,8 +210,8 @@ export default function AdminPage() {
         <TabsContent value="categories" className="mt-4">
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5"/>Comunidades Existentes</CardTitle>
-                    <CardDescription>Lista de todas las comunidades activas en el foro.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5"/>Comunidades Activas</CardTitle>
+                    <CardDescription>Lista de todas las comunidades en el foro.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                      {categories.map(c => (
