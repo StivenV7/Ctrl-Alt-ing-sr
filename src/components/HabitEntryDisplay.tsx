@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChevronDown, Circle, Star } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,13 +20,6 @@ interface HabitEntryDisplayProps {
 export function HabitEntryDisplay({ entry, index, habitId, mainDayEntries, onUpdateEntry }: HabitEntryDisplayProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [journalText, setJournalText] = useState(entry.journal || '');
-
-  // Automatically open the latest entry
-  useEffect(() => {
-    if (index === 0) {
-      setIsOpen(true);
-    }
-  }, [index]);
 
   const handleToggleOpen = () => {
     setIsOpen(prev => !prev);
