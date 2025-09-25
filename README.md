@@ -2,6 +2,17 @@
 
 Habitica es una aplicación web diseñada para ayudarte a construir y mantener hábitos positivos de una manera divertida y motivadora. La aplicación utiliza la gamificación, asignando rangos a medida que completas retos en diversas categorías, y cuenta con un coach de IA personalizado para guiarte en tu viaje.
 
+## 🎯 El Problema que Resolvemos
+
+Muchas personas luchan por construir y mantener hábitos positivos. Los principales obstáculos suelen ser:
+
+*   **Falta de Motivación:** La emoción inicial se desvanece y la rutina se vuelve monótona.
+*   **Objetivos Poco Claros:** Metas vagas como "quiero ser más saludable" son difíciles de convertir en acciones diarias.
+*   **Estancamiento:** La falta de un camino claro de progreso hace que los usuarios se sientan estancados y abandonen.
+*   **Enfoque Aislado:** Intentar cambiar hábitos en solitario puede ser un desafío sin un sistema de apoyo o guía.
+
+**Habitica** ataca estos problemas de frente combinando la ciencia de la formación de hábitos con la gamificación para mantener a los usuarios comprometidos, y un coach de IA que proporciona planes de acción claros y personalizados.
+
 ## 🚀 Tecnologías Utilizadas
 
 Este proyecto está construido con un stack moderno y robusto, enfocado en el rendimiento y la experiencia de desarrollo.
