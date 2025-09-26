@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
-import { Home, LogOut, MessageCircle, Trophy, Settings, BarChart } from 'lucide-react';
+import { Home, LogOut, MessageCircle, Trophy, Settings, BarChart, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { RANKS } from '@/lib/constants';
 import { useAuth } from '@/hooks/use-auth';
@@ -31,6 +31,7 @@ export function SidebarHeader() {
 const navItems = [
     { href: '/home', label: 'Inicio', icon: Home },
     { href: '/ranks', label: 'Rangos', icon: Trophy },
+    { href: '/leaderboard', label: 'Ranking', icon: Users },
     { href: '/reports', label: 'Reportes', icon: BarChart },
     { href: '/settings', label: 'Configuración', icon: Settings },
 ];

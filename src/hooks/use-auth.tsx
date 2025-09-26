@@ -14,7 +14,8 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, DocumentSnapshot, DocumentData, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
-
+import { PublicProfile } from '@/lib/types';
+import { updatePublicProfile as updatePublicProfileInDb, removePublicProfile as removePublicProfileFromDb } from '@/lib/firestore-service';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +26,8 @@ interface AuthContextType {
   updateUserProfile: (displayName: string) => Promise<void>;
   changeUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   deleteUserAccount: (currentPassword?: string) => Promise<void>;
+  updatePublicProfile: (profileData: PublicProfile) => Promise<void>;
+  removePublicProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +39,8 @@ const AuthContext = createContext<AuthContextType>({
   updateUserProfile: async () => {},
   changeUserPassword: async () => {},
   deleteUserAccount: async () => {},
+  updatePublicProfile: async () => {},
+  removePublicProfile: async () => {},
 });
 
 
@@ -117,17 +122,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!currentPassword) throw new Error("La contraseña es requerida para eliminar la cuenta.");
         await reauthenticate(currentPassword);
     }
-    // If it's a Google provider, re-authentication has to be handled via a popup,
-    // which is more complex and often done on the client-side just before calling this.
-    // For simplicity, we trust the re-auth happened if the provider is Google.
 
-    // 1. Delete Firestore document
+    // 1. Delete public profile if it exists
+    await removePublicProfileFromDb(user.uid);
+
+    // 2. Delete Firestore document
     const userRef = doc(db, "users", user.uid);
     await deleteDoc(userRef);
 
-    // 2. Delete user from Firebase Auth
+    // 3. Delete user from Firebase Auth
     // This will trigger the onAuthStateChanged listener, which will clean up state.
     await deleteUser(user);
+  };
+
+  const updatePublicProfile = async (profileData: PublicProfile) => {
+    if (!user) throw new Error("No hay usuario autenticado.");
+    await updatePublicProfileInDb(user.uid, profileData);
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, { isPublic: true });
+  };
+
+  const removePublicProfile = async () => {
+      if (!user) throw new Error("No hay usuario autenticado.");
+      await removePublicProfileFromDb(user.uid);
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { isPublic: false });
   };
 
 
@@ -139,7 +158,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setTheme,
     updateUserProfile,
     changeUserPassword,
-    deleteUserAccount
+    deleteUserAccount,
+    updatePublicProfile,
+    removePublicProfile,
   };
 
   return (

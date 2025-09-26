@@ -73,4 +73,13 @@ export interface FirestoreUser {
   habits: FirestoreHabit[];
   role: 'user' | 'admin';
   gender?: string;
+  isPublic?: boolean;
+}
+
+export interface PublicProfile {
+    uid: string;
+    displayName: string;
+    photoURL: string | null;
+    rankName: string;
+    completedHabits: number;
 }

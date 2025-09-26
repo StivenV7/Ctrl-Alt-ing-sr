@@ -11,9 +11,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 import { Switch } from '@/components/ui/switch';
+import { PublicProfile, Habit, FirestoreHabit } from '@/lib/types';
+import { calculateCompletedHabitsByCategory, getIconForHabit } from '@/lib/utils';
+import { RANKS } from '@/lib/constants';
+
 
 const profileFormSchema = z.object({
   displayName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
@@ -28,9 +32,11 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 
 export default function SettingsPage() {
-  const { user, userDoc, updateUserProfile, changeUserPassword, deleteUserAccount, loading: authLoading } = useAuth();
+  const { user, userDoc, updateUserProfile, changeUserPassword, deleteUserAccount, loading: authLoading, updatePublicProfile, removePublicProfile } = useAuth();
   const { toast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -48,6 +54,7 @@ export default function SettingsPage() {
       profileForm.reset({
         displayName: userData?.displayName || user?.displayName || '',
       });
+      setIsPublic(userData?.isPublic ?? false);
     }
   }, [userDoc, user, profileForm]);
 
@@ -60,6 +67,32 @@ export default function SettingsPage() {
       setNotificationsEnabled(Notification.permission === 'granted');
     }
   }, []);
+
+  const userHabits: Habit[] = useMemo(() => {
+    if (!userDoc?.exists()) return [];
+    const userData = userDoc.data();
+    return (userData?.habits || []).map((h: FirestoreHabit) => ({
+      ...h,
+      icon: getIconForHabit(h.id),
+      entries: h.entries || [],
+    }));
+  }, [userDoc]);
+
+  const completedHabitsByCategory = useMemo(() => calculateCompletedHabitsByCategory(userHabits), [userHabits]);
+
+  const currentRank = useMemo(() => {
+    for (let i = RANKS.length - 1; i >= 0; i--) {
+      const rank = RANKS[i];
+      const requirementsMet = Object.entries(rank.requirements).every(([category, requiredCount]) => {
+        const userCount = completedHabitsByCategory[category] || 0;
+        return userCount >= requiredCount;
+      });
+      if (requirementsMet) {
+        return rank;
+      }
+    }
+    return RANKS[0];
+  }, [completedHabitsByCategory]);
   
   const handleNotificationToggle = (enabled: boolean) => {
     localStorage.setItem('notificationsEnabled', String(enabled));
@@ -81,6 +114,34 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePublicProfileToggle = async (enabled: boolean) => {
+    if (!user || !userDoc?.exists()) return;
+    setIsCommunityLoading(true);
+
+    try {
+        if (enabled) {
+            const profileData: PublicProfile = {
+                uid: user.uid,
+                displayName: userDoc.data()?.displayName || user.displayName || 'Usuario Anónimo',
+                photoURL: user.photoURL,
+                rankName: currentRank.name,
+                completedHabits: completedHabitsByCategory.total,
+            };
+            await updatePublicProfile(profileData);
+            toast({ title: '¡Ahora eres público!', description: 'Aparecerás en el ranking de la comunidad.' });
+        } else {
+            await removePublicProfile();
+            toast({ title: 'Perfil privado', description: 'Ya no aparecerás en el ranking.' });
+        }
+        setIsPublic(enabled);
+    } catch (error) {
+        console.error("Error updating public profile status:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar tu estado en la comunidad.' });
+    } finally {
+        setIsCommunityLoading(false);
+    }
+};
+
   async function onProfileSubmit(data: ProfileFormValues) {
     try {
       await updateUserProfile(data.displayName);
@@ -88,6 +149,9 @@ export default function SettingsPage() {
         title: '¡Éxito!',
         description: 'Tu nombre de perfil ha sido actualizado.',
       });
+       if(isPublic) {
+        await handlePublicProfileToggle(true); // Re-sync public profile
+      }
     } catch (error) {
       console.error(error);
       toast({
@@ -178,6 +242,31 @@ export default function SettingsPage() {
               </Button>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Comunidad</CardTitle>
+           <CardDescription>Gestiona tu visibilidad en la comunidad de Habitica.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+             <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div>
+                <FormLabel>Aparecer en el ranking público</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Permite que otros vean tu progreso y compitan contigo.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isCommunityLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <Switch
+                    checked={isPublic}
+                    onCheckedChange={handlePublicProfileToggle}
+                    disabled={isCommunityLoading}
+                />
+              </div>
+            </div>
         </CardContent>
       </Card>
       
