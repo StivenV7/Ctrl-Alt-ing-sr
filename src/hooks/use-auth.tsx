@@ -5,10 +5,11 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
+  updateProfile,
   User,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, DocumentSnapshot, DocumentData, onSnapshot } from 'firebase/firestore';
+import { doc, DocumentSnapshot, DocumentData, onSnapshot, updateDoc } from 'firebase/firestore';
 
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   setTheme: (theme: 'light' | 'blue' | 'pink') => void;
   userDoc: DocumentSnapshot<DocumentData> | null;
+  updateUserProfile: (displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   setTheme: () => {},
   userDoc: null,
+  updateUserProfile: async () => {},
 });
 
 
@@ -76,9 +79,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     await firebaseSignOut(auth);
   };
+  
+  const updateUserProfile = async (displayName: string) => {
+    if (!user) throw new Error("No hay usuario autenticado.");
+
+    // Update Firebase Auth profile
+    await updateProfile(user, { displayName });
+
+    // Update Firestore document
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, { displayName });
+
+    // The onSnapshot listener will automatically update the local state.
+  };
 
   return (
-    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme }}>
+    <AuthContext.Provider value={{ user, userDoc, loading, signOut, setTheme, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
