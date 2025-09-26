@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useNotifications } from '@/hooks/use-notifications';
 
 
 export default function MainLayout({
@@ -17,6 +18,9 @@ export default function MainLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  
+  // Initialize notifications hook
+  useNotifications();
 
   useEffect(() => {
     if (!loading && !user) {

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
+import { Switch } from '@/components/ui/switch';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
@@ -29,6 +30,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 export default function SettingsPage() {
   const { user, userDoc, updateUserProfile, changeUserPassword, deleteUserAccount, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -48,6 +50,36 @@ export default function SettingsPage() {
       });
     }
   }, [userDoc, user, profileForm]);
+
+  useEffect(() => {
+    // Check localStorage for notification settings
+    const storedPreference = localStorage.getItem('notificationsEnabled');
+    if (storedPreference) {
+      setNotificationsEnabled(storedPreference === 'true');
+    } else if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationsEnabled(Notification.permission === 'granted');
+    }
+  }, []);
+  
+  const handleNotificationToggle = (enabled: boolean) => {
+    localStorage.setItem('notificationsEnabled', String(enabled));
+    setNotificationsEnabled(enabled);
+    if (enabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          localStorage.setItem('notificationsEnabled', 'true');
+          setNotificationsEnabled(true);
+          toast({ title: '¡Notificaciones activadas!', description: 'Recibirás recordatorios de tus hábitos.' });
+        } else {
+          localStorage.setItem('notificationsEnabled', 'false');
+          setNotificationsEnabled(false);
+          toast({ variant: 'destructive', title: 'Permiso denegado', description: 'No se pudieron activar las notificaciones.' });
+        }
+      });
+    } else if (!enabled) {
+        toast({ title: 'Notificaciones desactivadas', description: 'No recibirás más recordatorios.' });
+    }
+  };
 
   async function onProfileSubmit(data: ProfileFormValues) {
     try {
@@ -98,6 +130,27 @@ export default function SettingsPage() {
             <p className="mt-2 text-lg text-muted-foreground">Gestiona los datos de tu cuenta y preferencias.</p>
         </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Preferencias</CardTitle>
+           <CardDescription>Personaliza tu experiencia en la aplicación.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+             <div className="flex items-center justify-between p-4 rounded-lg border">
+              <div>
+                <FormLabel>Recordatorios de Hábitos</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Recibe notificaciones para completar tus hábitos diarios.
+                </p>
+              </div>
+              <Switch
+                checked={notificationsEnabled}
+                onCheckedChange={handleNotificationToggle}
+              />
+            </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Editar Perfil</CardTitle>
