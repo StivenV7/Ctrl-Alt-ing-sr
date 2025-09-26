@@ -6,42 +6,50 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { DeleteAccountDialog } from '@/components/DeleteAccountDialog';
 
 const profileFormSchema = z.object({
   displayName: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
 });
-
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, { message: 'La contraseña actual es requerida.' }),
+  newPassword: z.string().min(6, { message: 'La nueva contraseña debe tener al menos 6 caracteres.' }),
+});
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
+
 export default function SettingsPage() {
-  const { user, userDoc, updateUserProfile, loading: authLoading } = useAuth();
+  const { user, userDoc, updateUserProfile, changeUserPassword, deleteUserAccount, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const form = useForm<ProfileFormValues>({
+  const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      displayName: '',
-    },
+    defaultValues: { displayName: '' },
+  });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: { currentPassword: '', newPassword: '' },
   });
   
-  const { isSubmitting } = form.formState;
-
   useEffect(() => {
     if (userDoc) {
       const userData = userDoc.data();
-      form.reset({
+      profileForm.reset({
         displayName: userData?.displayName || user?.displayName || '',
       });
     }
-  }, [userDoc, user, form]);
+  }, [userDoc, user, profileForm]);
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onProfileSubmit(data: ProfileFormValues) {
     try {
       await updateUserProfile(data.displayName);
       toast({
@@ -57,14 +65,35 @@ export default function SettingsPage() {
       });
     }
   }
+  
+  async function onPasswordSubmit(data: PasswordFormValues) {
+    try {
+      await changeUserPassword(data.currentPassword, data.newPassword);
+      toast({
+        title: '¡Éxito!',
+        description: 'Tu contraseña ha sido actualizada.',
+      });
+      passwordForm.reset();
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al cambiar la contraseña',
+        description: error.message || 'Ocurrió un error. Verifica tu contraseña actual.',
+      });
+    }
+  }
+  
+  const isGoogleProvider = user?.providerData.some(p => p.providerId === 'google.com');
+
 
   if (authLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="space-y-8">
-       <div className="text-center">
+    <div className="space-y-8 max-w-2xl mx-auto">
+       <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-primary">Configuración</h1>
             <p className="mt-2 text-lg text-muted-foreground">Gestiona los datos de tu cuenta y preferencias.</p>
         </div>
@@ -75,10 +104,10 @@ export default function SettingsPage() {
           <CardDescription>Actualiza tu nombre de usuario.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
               <FormField
-                control={form.control}
+                control={profileForm.control}
                 name="displayName"
                 render={({ field }) => (
                   <FormItem>
@@ -90,14 +119,78 @@ export default function SettingsPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar Cambios
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
+      
+      {!isGoogleProvider && (
+         <Card>
+            <CardHeader>
+            <CardTitle>Cambiar Contraseña</CardTitle>
+            <CardDescription>Actualiza tu contraseña. Necesitarás tu contraseña actual para hacerlo.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Contraseña Actual</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nueva Contraseña</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                    {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Actualizar Contraseña
+                </Button>
+                </form>
+            </Form>
+            </CardContent>
+        </Card>
+      )}
+
+       <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Zona de Peligro</CardTitle>
+          <CardDescription>
+            Estas acciones son permanentes y no se pueden deshacer.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex justify-between items-center p-4 rounded-md border border-destructive/50">
+                <div>
+                    <h4 className="font-semibold">Eliminar mi cuenta</h4>
+                    <p className="text-sm text-muted-foreground">Todos tus datos, hábitos y progreso serán eliminados permanentemente.</p>
+                </div>
+                 <DeleteAccountDialog onDeleteAccount={deleteUserAccount} isGoogleProvider={isGoogleProvider ?? false} />
+            </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
