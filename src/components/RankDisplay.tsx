@@ -18,11 +18,12 @@ export function RankDisplay({ rank, xp, displayName }: RankDisplayProps) {
   const currentRankIndex = RANKS.findIndex(r => r.name === rank.name);
   const nextRank = RANKS[currentRankIndex + 1];
 
-  const progress = nextRank
-    ? Math.floor(((xp - rank.minXp) / (nextRank.minXp - rank.minXp)) * 100)
-    : 100;
+  // Since ranks are based on completed habits, show XP as the primary progress metric
+  // Progress bar shows relative position between current and max possible XP
+  const maxXp = 1000; // Arbitrary max for display purposes
+  const progress = Math.min(Math.floor((xp / maxXp) * 100), 100);
 
-  const xpForNextRank = nextRank ? nextRank.minXp - xp : 0;
+  const xpForNextRank = 0; // XP doesn't directly determine rank progression
 
   return (
     <TooltipProvider>
@@ -49,7 +50,7 @@ export function RankDisplay({ rank, xp, displayName }: RankDisplayProps) {
         </TooltipTrigger>
         <TooltipContent>
           {nextRank ? (
-            <p>{xpForNextRank} XP para el siguiente rango: {nextRank.name}</p>
+            <p>Completa más retos para alcanzar: {nextRank.name}</p>
           ) : (
             <p>¡Has alcanzado el rango más alto!</p>
           )}
