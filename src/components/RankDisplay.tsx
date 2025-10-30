@@ -7,6 +7,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+// Display constant for XP progress visualization
+const MAX_XP_FOR_DISPLAY = 1000;
+
 type RankDisplayProps = {
   rank: Rank;
   xp: number;
@@ -20,10 +23,7 @@ export function RankDisplay({ rank, xp, displayName }: RankDisplayProps) {
 
   // Since ranks are based on completed habits, show XP as the primary progress metric
   // Progress bar shows relative position between current and max possible XP
-  const maxXp = 1000; // Arbitrary max for display purposes
-  const progress = Math.min(Math.floor((xp / maxXp) * 100), 100);
-
-  const xpForNextRank = 0; // XP doesn't directly determine rank progression
+  const progress = Math.min(Math.floor((xp / MAX_XP_FOR_DISPLAY) * 100), 100);
 
   return (
     <TooltipProvider>
