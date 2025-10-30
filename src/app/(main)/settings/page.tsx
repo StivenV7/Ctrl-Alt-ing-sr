@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { PublicProfile, Habit, FirestoreHabit } from '@/lib/types';
 import { calculateCompletedHabitsByCategory, getIconForHabit } from '@/lib/utils';
 import { RANKS } from '@/lib/constants';
+import { Label } from '@/components/ui/label';
 
 
 const profileFormSchema = z.object({
@@ -202,7 +203,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
              <div className="flex items-center justify-between p-4 rounded-lg border">
               <div>
-                <FormLabel>Recordatorios de Hábitos</FormLabel>
+                <Label>Recordatorios de Hábitos</Label>
                 <p className="text-sm text-muted-foreground">
                   Recibe notificaciones para completar tus hábitos diarios.
                 </p>
@@ -253,7 +254,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
              <div className="flex items-center justify-between p-4 rounded-lg border">
               <div>
-                <FormLabel>Aparecer en el ranking público</FormLabel>
+                <Label>Aparecer en el ranking público</Label>
                 <p className="text-sm text-muted-foreground">
                   Permite que otros vean tu progreso y compitan contigo.
                 </p>
@@ -335,4 +336,5 @@ export default function SettingsPage() {
 
     </div>
   );
-}
+
+    
