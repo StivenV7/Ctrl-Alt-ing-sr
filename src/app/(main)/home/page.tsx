@@ -7,8 +7,7 @@ import type { Habit, FirestoreHabit, ChatMessage, ChatOutput, HabitEntry } from 
 import { chat } from '@/ai/flows/chat-flow';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { format, startOfDay, isSameDay, parseISO } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,59 +25,54 @@ export default function HomePage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
-  const { user, userDoc, loading: authLoading, signOut } = useAuth();
+  const { user, userDoc, userData, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const [newlyAddedHabitId, setNewlyAddedHabitId] = useState<string | null>(null);
 
-  
-  const userRef = useMemo(() => user ? doc(db, "users", user.uid) : null, [user]);
-
   const loadUserData = useCallback(async () => {
-    if (!userRef) return;
-    if (userDoc?.exists()) {
-        try {
-            const userData = userDoc.data();
-            const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit) => ({
-                ...habit,
-                entries: habit.entries || [],
-                icon: getIconForHabit(habit.id),
-            }));
-            setHabits(loadedHabits);
-        } catch (error) {
-            console.error("Error processing user data:", error);
-        }
+    if (!user || !userData) return;
+    try {
+      const loadedHabits = (userData.habits || []).map((habit: FirestoreHabit): Habit => ({
+        ...habit,
+        entries: habit.entries || [],
+        icon: getIconForHabit(habit.id) as any,
+      }));
+      setHabits(loadedHabits);
+    } catch (error) {
+      console.error("Error processing user data:", error);
     }
     setIsDataLoaded(true);
-}, [userRef, userDoc]);
+  }, [user, userData]);
   
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
-    } else if (user && userDoc && !isDataLoaded) {
+    } else if (user && userData && !isDataLoaded) {
       loadUserData();
-    } else if (!userDoc && !authLoading) {
+    } else if (!userData && !authLoading && user) {
       setIsDataLoaded(true); // Handle case for new users with no doc yet
     }
-  }, [user, userDoc, authLoading, router, isDataLoaded, loadUserData]);
+  }, [user, userData, authLoading, router, isDataLoaded, loadUserData]);
 
 
   const saveData = useCallback(async (updatedHabits: Habit[], xpGained = 0) => {
-    if (!userRef || !userDoc) return;
+    if (!user) return;
     try {
-      const dataToSave: { habits: FirestoreHabit[] } = {
+      const dataToSave: any = {
         habits: updatedHabits.map(({ icon, ...rest }) => rest),
       };
 
       if (xpGained > 0) {
-        const currentXp = userDoc.data()?.xp || 0;
-        await updateDoc(userRef, {
-            ...dataToSave,
-            xp: currentXp + xpGained
-        });
-      } else {
-        // Use setDoc with merge to avoid overwriting other user fields
-        await setDoc(userRef, dataToSave, { merge: true });
+        const currentXp = userData?.xp || 0;
+        dataToSave.xp = currentXp + xpGained;
       }
+
+      const { error } = await supabase
+        .from('users')
+        .update(dataToSave)
+        .eq('id', user.id);
+
+      if (error) throw error;
     } catch (error) {
       console.error("Error saving data:", error);
       toast({
@@ -87,7 +81,7 @@ export default function HomePage() {
         description: "No se pudo guardar tu progreso.",
       });
     }
-  }, [userRef, userDoc, toast]);
+  }, [user, userData, toast]);
 
 
   const handleUpdateEntry = (habitId: string, entryDate: string, newValues: Partial<HabitEntry>) => {

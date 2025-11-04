@@ -1,11 +1,14 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/use-auth-supabase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc } from "firebase/firestore"; 
+import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,75 +55,63 @@ export function LoginForm({ setError }: LoginFormProps) {
     setError(null);
     try {
       if (currentTab === 'signin') {
-        // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        });
-        
-        if (error) throw error;
+        await signInWithEmailAndPassword(auth, values.email, values.password);
       } else {
-        // Sign up
         if (!values.username) {
-          form.setError("username", { type: "manual", message: "El nombre de usuario es requerido."});
-          setLoading(false);
-          return;
+            form.setError("username", { type: "manual", message: "El nombre de usuario es requerido."});
+            setLoading(false);
+            return;
         }
         if (!values.gender) {
-          form.setError("gender", { type: "manual", message: "El sexo es requerido."});
-          setLoading(false);
-          return;
+            form.setError("gender", { type: "manual", message: "El sexo es requerido."});
+            setLoading(false);
+            return;
         }
         
-        const { data, error } = await supabase.auth.signUp({
-          email: values.email,
-          password: values.password,
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const user = userCredential.user;
+
+        await updateProfile(user, {
+            displayName: values.username,
         });
-
-        if (error) throw error;
-        if (!data.user) throw new Error('No se pudo crear el usuario');
-
+        
         const userGender = values.gender || 'prefer-not-to-say';
         const theme = userGender === 'male' ? 'blue' : userGender === 'female' ? 'pink' : 'light';
         setTheme(theme);
         
-        // Create user profile in database
-        const { error: dbError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: values.email,
-            display_name: values.username,
-            gender: userGender,
-            theme: theme,
-            xp: 0,
-            habits: [],
-            role: 'user',
-          });
-
-        if (dbError) throw dbError;
+        // Create user document in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          displayName: values.username,
+          email: values.email,
+          gender: userGender,
+          theme: theme,
+          xp: 0,
+          habits: [],
+          role: 'user', // All new signups are users
+        });
       }
     } catch (error: any) {
-      setError(getSupabaseErrorMessage(error.message || error.code));
+      setError(getFirebaseErrorMessage(error.code));
     } finally {
       setLoading(false);
     }
   };
 
-  const getSupabaseErrorMessage = (errorMessage: string) => {
-    if (errorMessage.includes('Invalid login credentials')) {
-      return 'Correo o contraseña incorrectos.';
+  const getFirebaseErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return 'El formato del correo electrónico no es válido.';
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+        return 'Correo o contraseña incorrectos.';
+      case 'auth/email-already-in-use':
+        return 'Este correo electrónico ya está en uso.';
+      case 'auth/weak-password':
+        return 'La contraseña es demasiado débil.';
+      default:
+        return 'Ha ocurrido un error. Inténtalo de nuevo.';
     }
-    if (errorMessage.includes('User already registered')) {
-      return 'Este correo electrónico ya está en uso.';
-    }
-    if (errorMessage.includes('Email not confirmed')) {
-      return 'Por favor, confirma tu correo electrónico.';
-    }
-    if (errorMessage.includes('Password should be at least 6 characters')) {
-      return 'La contraseña debe tener al menos 6 caracteres.';
-    }
-    return 'Ha ocurrido un error. Inténtalo de nuevo.';
   };
 
   return (
@@ -173,9 +164,9 @@ export function LoginForm({ setError }: LoginFormProps) {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre de Usuario</FormLabel>
+                  <FormLabel>Nombre de usuario</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tu nombre" {...field} />
+                    <Input placeholder="Tu nombre de usuario" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -212,8 +203,8 @@ export function LoginForm({ setError }: LoginFormProps) {
               name="gender"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sexo (afecta el tema de color)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Sexo</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona tu sexo" />
@@ -223,7 +214,7 @@ export function LoginForm({ setError }: LoginFormProps) {
                       <SelectItem value="male">Masculino</SelectItem>
                       <SelectItem value="female">Femenino</SelectItem>
                       <SelectItem value="other">Otro</SelectItem>
-                      <SelectItem value="prefer-not-to-say">Prefiero no decir</SelectItem>
+                      <SelectItem value="prefer-not-to-say">Prefiero no decirlo</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
